@@ -1,0 +1,1532 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>PÓZE Selfbooth · Luồng dịch vụ / Service flow</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Baloo+2:wght@500;600;700;800&family=Bodoni+Moda:opsz,wght@6..96,700;6..96,900&family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* ═══════════════════════════════════════════════════════════════════════
+   TOKENS — Poze palette (see brand-spec.md). No raw hex outside this block.
+   ═══════════════════════════════════════════════════════════════════════ */
+:root{
+  --bg:#7a1e22;            /* oxblood canvas */
+  --bg-deep:#5c1417;       /* recessed / camera letterbox */
+  --bg-ink:#3d0f11;
+  --surface:#f7f1e3;       /* cream cards, inputs, keys */
+  --surface-2:#efe6d2;
+  --fg:#f6efe1;            /* cream text on oxblood */
+  --ink:#201d18;           /* ink text on cream */
+  --muted:#c9b49a;
+  --muted-ink:#6d6355;
+  --border:#a24e50;
+  --border-ink:#d9cdb4;
+  --accent:#c6a15b;        /* gold */
+  --accent-2:#ecd9a6;
+  --gold-deep:#a9853f;
+  --ok:#43b25a;
+  --danger:#e0402f;
+  --info:#5b7fc7;
+  --orange:#e07b3a;
+
+  /* printed-frame artwork palettes (content, lifted from the reference frames) */
+  --frame-coastal-bg:#efe7d5; --frame-coastal-accent:#3f6f6a; --frame-coastal-ink:#2b2b2b;
+  --frame-catba-bg:#cfe3ec;   --frame-catba-accent:#2f6f9e;   --frame-catba-ink:#1d3b4d;
+  --frame-love-bg:#f6e6ea;    --frame-love-accent:#b5768a;    --frame-love-ink:#5a3242;
+
+  --accent-soft:color-mix(in oklch, var(--accent) 18%, transparent);
+  --cream-soft:color-mix(in oklch, var(--fg) 10%, transparent);
+  --ink-soft:color-mix(in oklch, var(--ink) 8%, transparent);
+
+  --font-display:'Anton','Archivo Narrow','Oswald','Arial Narrow',sans-serif;
+  --font-round:'Baloo 2','Nunito',system-ui,sans-serif;
+  --font-serif:'Bodoni Moda','Playfair Display',Georgia,serif;
+  --font-body:'Be Vietnam Pro',-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;
+  --font-mono:ui-monospace,'SF Mono',Menlo,monospace;
+
+  --radius:14px;
+  --radius-lg:22px;
+  --grain:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)' opacity='0.5'/%3E%3C/svg%3E");
+  --photo:radial-gradient(125% 95% at 30% 18%, oklch(76% 0.05 58) 0%, oklch(54% 0.075 34) 46%, oklch(30% 0.06 24) 100%);
+  --photo-soft:radial-gradient(125% 95% at 30% 18%, oklch(90% 0.03 62) 0%, oklch(72% 0.055 40) 55%, oklch(54% 0.05 30) 100%);
+}
+
+/* ─── reset & base ─────────────────────────────────────────────────── */
+*,*::before,*::after{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0;background:var(--bg);color:var(--fg);
+  font-family:var(--font-body);font-size:15px;line-height:1.55;
+  text-rendering:optimizeLegibility;-webkit-font-smoothing:antialiased;
+  min-height:100vh;
+}
+body::before{
+  content:"";position:fixed;inset:0;z-index:0;pointer-events:none;
+  background-image:var(--grain);opacity:.06;mix-blend-mode:overlay;
+}
+img,svg{display:block;max-width:100%}
+button{font:inherit;cursor:pointer;border:0;background:none;color:inherit}
+a{color:inherit;text-decoration:none}
+p{margin:0;text-wrap:pretty}
+h1,h2,h3,h4{margin:0;text-wrap:balance;font-family:var(--font-display);font-weight:400}
+.t-en{display:none}
+body[data-lang="en"] .t-vi{display:none}
+body[data-lang="en"] .t-en{display:inline}
+.mono{font-family:var(--font-mono);font-variant-numeric:tabular-nums}
+
+/* ─── page chrome ──────────────────────────────────────────────────── */
+.topbar{
+  position:sticky;top:0;z-index:20;
+  background:color-mix(in oklch, var(--bg) 86%, transparent);
+  backdrop-filter:blur(14px);
+  border-bottom:1px solid var(--border);
+}
+.topbar-in{display:flex;align-items:center;justify-content:space-between;gap:20px;
+  max-width:1440px;margin-inline:auto;padding:12px 24px}
+.brand{display:flex;align-items:center;gap:14px;min-width:0}
+.brand .mark{font-family:var(--font-serif);font-weight:900;font-size:26px;letter-spacing:.01em;color:var(--accent);line-height:1}
+.brand .div{width:1px;height:26px;background:var(--border)}
+.brand .sub{font-family:var(--font-round);font-weight:600;font-size:13px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lang{display:flex;border:1px solid var(--border);border-radius:999px;overflow:hidden;flex:none}
+.lang button{padding:6px 14px;font-family:var(--font-round);font-weight:700;font-size:12.5px;color:var(--muted);letter-spacing:.04em}
+.lang button.on{background:var(--accent);color:var(--ink)}
+
+.shell{position:relative;z-index:1;max-width:1440px;margin-inline:auto;padding:28px 24px 64px;
+  display:grid;grid-template-columns:288px minmax(0,1fr);gap:32px;align-items:start}
+@media (max-width:1080px){ .shell{grid-template-columns:1fr;gap:20px} }
+
+/* ─── step rail ────────────────────────────────────────────────────── */
+.rail{position:sticky;top:78px}
+@media (max-width:1080px){ .rail{position:static} }
+.rail h2{font-family:var(--font-display);font-size:19px;letter-spacing:.02em;text-transform:uppercase;color:var(--accent);font-weight:400}
+.rail .hint{font-size:12.5px;color:var(--muted);margin-top:6px;font-family:var(--font-round)}
+.rail ol{list-style:none;margin:18px 0 0;padding:0;display:flex;flex-direction:column;gap:4px}
+@media (max-width:1080px){
+  .rail ol{flex-direction:row;overflow-x:auto;gap:8px;padding-bottom:6px;scrollbar-width:thin}
+  .rail ol li{flex:none}
+}
+.rail button{
+  width:100%;display:flex;align-items:center;gap:12px;text-align:left;
+  padding:10px 12px;border-radius:12px;border:1px solid transparent;transition:.15s ease;
+}
+.rail button:hover{background:var(--cream-soft)}
+.rail button .n{
+  flex:none;width:26px;height:26px;border-radius:50%;display:grid;place-items:center;
+  font-family:var(--font-mono);font-size:12px;font-weight:600;
+  border:1px solid var(--border);color:var(--muted);
+}
+.rail button .lbl{font-family:var(--font-round);font-weight:600;font-size:13.5px;line-height:1.3}
+.rail button[aria-current="true"]{background:var(--cream-soft);border-color:var(--border)}
+.rail button[aria-current="true"] .n{background:var(--accent);border-color:var(--accent);color:var(--ink)}
+.rail button[aria-current="true"] .lbl{color:var(--fg)}
+.rail button.done .n{background:color-mix(in oklch,var(--ok) 30%,transparent);border-color:var(--ok);color:var(--fg)}
+
+/* ─── stage ────────────────────────────────────────────────────────── */
+.stage{min-width:0}
+.stage-head{display:flex;align-items:flex-end;justify-content:space-between;gap:24px;flex-wrap:wrap;
+  padding-bottom:16px;border-bottom:1px solid var(--border)}
+.stage-head .idx{font-family:var(--font-mono);font-size:12px;color:var(--accent);letter-spacing:.14em}
+.stage-head h1{font-family:var(--font-display);font-weight:400;font-size:clamp(26px,3.4vw,40px);
+  line-height:1.04;letter-spacing:.005em;text-transform:uppercase;margin-top:6px}
+.stage-head p{color:var(--muted);font-size:14px;max-width:62ch;margin-top:8px;font-family:var(--font-round)}
+.navbtns{display:flex;gap:10px;flex:none}
+.navbtns button{
+  font-family:var(--font-round);font-weight:700;font-size:13.5px;
+  padding:10px 18px;border-radius:999px;border:2px solid var(--ink);
+  background:var(--accent);color:var(--ink);transition:.15s ease;
+}
+.navbtns button.ghost{background:transparent;color:var(--fg);border-color:var(--border)}
+.navbtns button:disabled{opacity:.35;cursor:not-allowed}
+.navbtns button:not(:disabled):hover{transform:translateY(-1px)}
+
+.surfaces{display:flex;flex-wrap:wrap;gap:28px;align-items:flex-start;margin-top:26px}
+.surface-note{font-family:var(--font-mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--muted);margin-bottom:10px}
+.surface-wrap{display:flex;flex-direction:column;min-width:0}
+.surface-wrap[hidden]{display:none}
+.surface-wrap.grow{flex:1 1 520px}
+
+/* ═══ DEVICE FRAMES ═════════════════════════════════════════════════ */
+.device{position:relative;border-radius:18px;background:var(--bg-ink);
+  border:1px solid var(--border);box-shadow:0 26px 60px -30px rgba(0,0,0,.85);overflow:hidden}
+.device--kiosk{container-type:size;aspect-ratio:16/9;width:100%}
+.device--overhead{container-type:size;aspect-ratio:16/9;width:100%;border-radius:14px}
+.device--phone{container-type:size;aspect-ratio:390/844;width:min(390px,86vw);border-radius:44px;
+  border:8px solid var(--bg-ink);padding:0}
+.device--admin{container-type:size;aspect-ratio:16/10;width:100%;border-radius:14px}
+
+/* app canvas fills the kiosk / overhead */
+.screen{position:absolute;inset:0;display:none;overflow:hidden;background:var(--bg)}
+.screen.on{display:block}
+.screen::after{content:"";position:absolute;inset:0;background-image:var(--grain);opacity:.05;pointer-events:none}
+
+/* ═══ KIOSK UI ══════════════════════════════════════════════════════ */
+.k-pad{padding:3.2cqw 3.6cqw;height:100%;display:flex;flex-direction:column;position:relative;z-index:1}
+.k-top{display:flex;align-items:center;justify-content:space-between;gap:2cqw;margin-bottom:2.4cqw}
+.k-logo{font-family:var(--font-serif);font-weight:900;color:var(--accent);font-size:3.1cqw;line-height:1}
+.k-eyebrow{font-family:var(--font-mono);font-size:1.05cqw;letter-spacing:.22em;text-transform:uppercase;color:var(--accent-2)}
+.k-h1{font-family:var(--font-display);font-weight:400;text-transform:uppercase;color:var(--accent);
+  font-size:5.2cqw;line-height:1;letter-spacing:.005em}
+.k-h1.sm{font-size:4.2cqw}
+.k-sub{font-family:var(--font-round);font-weight:700;color:var(--fg);font-size:1.9cqw;margin-top:.5cqw}
+.k-body{flex:1;min-height:0;display:flex;flex-direction:column}
+.k-foot{display:flex;align-items:center;justify-content:center;gap:2cqw;margin-top:2cqw}
+
+/* pill buttons */
+.pill{
+  font-family:var(--font-round);font-weight:700;display:inline-flex;align-items:center;justify-content:center;
+  gap:.7em;border-radius:999px;border:2px solid var(--ink);transition:.15s ease;white-space:nowrap;
+}
+.pill.gold{background:var(--accent);color:var(--ink)}
+.pill.cream{background:var(--surface);color:var(--ink)}
+.pill.ok{background:var(--ok);color:var(--surface);border-color:var(--ok)}
+.pill.danger{background:var(--danger);color:var(--surface);border-color:var(--danger)}
+.pill.info{background:var(--info);color:var(--surface);border-color:var(--info)}
+.pill.ghost{background:transparent;color:var(--fg);border-color:var(--border)}
+.pill:not(:disabled):hover{transform:translateY(-1px)}
+.pill:disabled{opacity:.4;cursor:not-allowed}
+.pill.k{font-size:1.5cqw;padding:1.15cqw 2.6cqw}
+.pill.k-lg{font-size:1.75cqw;padding:1.4cqw 3.4cqw}
+.k-icon-btn{width:3.4cqw;height:3.4cqw;border-radius:50%;background:var(--accent);color:var(--ink);
+  display:grid;place-items:center;font-size:1.9cqw;font-weight:800;font-family:var(--font-round)}
+
+/* pricing */
+.k-cols{display:grid;grid-template-columns:1fr 1fr;gap:2.4cqw;flex:1;min-height:0}
+.k-group{background:color-mix(in oklch,var(--bg-deep) 70%,transparent);border:1px solid var(--border);
+  border-radius:var(--radius);padding:1.8cqw;display:flex;flex-direction:column;gap:1.2cqw}
+.k-group.picked{border-color:var(--accent);background:color-mix(in oklch,var(--accent) 12%,var(--bg-deep))}
+.k-group h3{font-family:var(--font-display);font-weight:400;text-transform:uppercase;color:var(--accent-2);font-size:2.5cqw;line-height:1.05}
+.k-group .en{font-family:var(--font-round);font-weight:600;color:var(--muted);font-size:1.3cqw}
+.k-counts{display:grid;grid-template-columns:repeat(4,1fr);gap:1.1cqw;margin-top:.4cqw}
+.k-count{border:2px solid var(--border-ink);background:var(--surface);color:var(--ink);border-radius:var(--radius);
+  padding:1cqw .4cqw;display:flex;flex-direction:column;align-items:center;gap:.35cqw;transition:.15s ease}
+.k-count .c{font-family:var(--font-display);font-size:2.9cqw;line-height:1}
+.k-count .p{font-family:var(--font-mono);font-size:1.15cqw;color:var(--muted-ink)}
+.k-count.picked{background:var(--accent);border-color:var(--ink)}
+.k-count.picked .p{color:var(--ink)}
+.k-total{display:flex;align-items:baseline;gap:1.2cqw;justify-content:center;margin-top:1.6cqw}
+.k-total .lab{font-family:var(--font-round);font-weight:700;font-size:1.7cqw;color:var(--muted)}
+.k-total .val{font-family:var(--font-mono);font-weight:600;font-size:3.4cqw;color:var(--accent)}
+
+/* payment */
+.k-pay{display:grid;grid-template-columns:1.35fr 1fr;gap:2.6cqw;flex:1;min-height:0;align-items:center}
+.k-field{background:var(--surface);color:var(--ink);border:2px solid var(--ink);border-radius:999px;
+  padding:1.3cqw 2cqw;font-family:var(--font-mono);font-size:1.7cqw;letter-spacing:.18em}
+.k-pay .rowlab{font-family:var(--font-round);font-weight:700;font-size:1.6cqw;color:var(--fg);margin-top:1.6cqw}
+.k-pay .note{font-family:var(--font-round);font-size:1.25cqw;color:var(--muted);max-width:26ch}
+.keypad{display:grid;grid-template-columns:repeat(3,1fr);gap:1.1cqw}
+.keypad button{aspect-ratio:1;border-radius:50%;background:var(--surface);color:var(--ink);
+  font-family:var(--font-round);font-weight:700;font-size:2.3cqw;border:2px solid var(--border-ink);transition:.12s ease}
+.keypad button:hover{background:var(--surface-2)}
+.keypad button.act{font-size:1.5cqw}
+.keypad button.del{background:var(--danger);color:var(--surface);border-color:var(--danger)}
+.keypad button.ok{background:var(--ok);color:var(--surface);border-color:var(--ok)}
+.k-methods{display:grid;grid-template-columns:1fr 1fr;gap:2cqw;margin-top:2cqw}
+
+/* qr block */
+.qr-box{background:var(--surface);border-radius:var(--radius);padding:1.5cqw;display:grid;place-items:center}
+.qr-box svg{width:100%;height:auto;color:var(--ink)}
+.qr-caption{background:var(--ink);color:var(--surface);font-family:var(--font-round);font-weight:700;
+  font-size:1.3cqw;letter-spacing:.14em;text-transform:uppercase;padding:.5cqw 1.6cqw;border-radius:999px}
+.k-center{display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;gap:1.8cqw;text-align:center}
+.k-center .qr-box{width:26cqw}
+
+/* session code display */
+.code-boxes{display:flex;gap:1.6cqw;justify-content:center}
+.code-boxes .cb{width:6.4cqw;height:8cqw;border-radius:var(--radius);background:var(--surface);
+  border:2px solid var(--ink);display:grid;place-items:center;
+  font-family:var(--font-mono);font-weight:600;font-size:4cqw;color:var(--ink)}
+.code-boxes .cb.empty{color:var(--border-ink)}
+.code-boxes .cb.active{border-color:var(--accent);box-shadow:0 0 0 .4cqw var(--accent-soft)}
+
+/* capture stage */
+.k-cam{position:absolute;inset:0;background:var(--bg-deep)}
+.cam-strip{position:absolute;top:0;bottom:0;width:17%;background:var(--photo);background-size:cover;
+  filter:blur(18px) brightness(.5) saturate(1.15);opacity:.9}
+.cam-strip.l{left:0}.cam-strip.r{right:0}
+.cam-main{position:absolute;top:0;bottom:0;left:17%;right:17%;background:var(--photo);
+  background-size:cover;background-position:center}
+.cam-main::after{content:"";position:absolute;inset:0;pointer-events:none;
+  background:repeating-linear-gradient(0deg,rgba(255,255,255,.05) 0 1px,transparent 1px 3px)}
+.cam-vig{position:absolute;inset:0;background:radial-gradient(ellipse at center,transparent 45%,rgba(0,0,0,.45))}
+.cam-bar{position:absolute;top:1.4cqw;left:1.4cqw;right:1.4cqw;display:flex;align-items:center;gap:1.4cqw;z-index:3}
+.cam-bar .spacer{flex:1}
+.cam-prog{width:16cqw;height:.8cqw;border-radius:999px;background:rgba(255,255,255,.28);overflow:hidden}
+.cam-prog i{display:block;height:100%;background:var(--info);width:0;transition:width .3s linear}
+.cam-chip{background:rgba(20,10,10,.6);color:var(--fg);font-family:var(--font-mono);font-size:1.25cqw;
+  padding:.5cqw 1.1cqw;border-radius:999px;display:flex;align-items:center;gap:.6cqw}
+.cam-count{position:absolute;inset:0;display:grid;place-items:center;z-index:4}
+.cam-count .ring{position:absolute;width:26cqw;height:26cqw;transform:rotate(-90deg)}
+.cam-count .ring circle{fill:none;stroke-width:1.4;stroke-linecap:round}
+.cam-count .ring .bg{stroke:rgba(255,255,255,.16)}
+.cam-count .ring .fg{stroke:var(--info)}
+.cam-count .num{font-family:var(--font-display);font-size:17cqw;color:var(--info);line-height:1;
+  text-shadow:0 0 4cqw rgba(0,0,0,.35)}
+.cam-foot{position:absolute;bottom:1.6cqw;left:0;right:0;display:flex;justify-content:center;align-items:center;gap:2cqw;z-index:3}
+.cam-badge{position:absolute;top:1.4cqw;right:1.4cqw;background:rgba(20,10,10,.6);border-radius:999px;
+  padding:.5cqw 1.2cqw;font-family:var(--font-round);font-weight:600;font-size:1.2cqw;display:flex;align-items:center;gap:.6cqw;z-index:3}
+.cam-badge i{width:.9cqw;height:.9cqw;border-radius:50%;background:var(--danger);display:block}
+.cam-flash{position:absolute;inset:0;background:#fff;opacity:0;z-index:5;pointer-events:none;transition:opacity .1s ease}
+.cam-flash.on{opacity:.92;transition:none}
+.cam-dots{display:flex;gap:1cqw;align-items:center}
+.cam-dots i{width:1.5cqw;height:1.5cqw;border-radius:50%;background:rgba(255,255,255,.32);display:block;transition:.2s ease}
+.cam-dots i.on{background:var(--accent);transform:scale(1.15)}
+
+/* review */
+.k-review{display:grid;grid-template-columns:1.5fr 1fr;gap:2.2cqw;flex:1;min-height:0}
+.k-shot{background:var(--photo);background-size:cover;border-radius:var(--radius);position:relative;overflow:hidden}
+.k-shot .tag{position:absolute;top:1cqw;left:1cqw;background:var(--ink);color:var(--surface);
+  font-family:var(--font-round);font-weight:700;font-size:1.2cqw;padding:.4cqw 1.2cqw;border-radius:999px}
+.collage{--frame-bg:var(--frame-coastal-bg);--frame-accent:var(--frame-coastal-accent);--frame-ink:var(--frame-coastal-ink);
+  container-type:inline-size;
+  width:100%;background:var(--frame-bg);border-radius:8px;padding:6%;display:flex;flex-direction:column;gap:5%;
+  box-shadow:0 12px 30px -18px color-mix(in oklch, var(--bg-ink) 70%, transparent);transform-origin:center}
+.collage[data-frame="coastal"]{--frame-bg:var(--frame-coastal-bg);--frame-accent:var(--frame-coastal-accent);--frame-ink:var(--frame-coastal-ink)}
+.collage[data-frame="catba"]{--frame-bg:var(--frame-catba-bg);--frame-accent:var(--frame-catba-accent);--frame-ink:var(--frame-catba-ink)}
+.collage[data-frame="love"]{--frame-bg:var(--frame-love-bg);--frame-accent:var(--frame-love-accent);--frame-ink:var(--frame-love-ink)}
+.collage .slot{aspect-ratio:16/10;background:var(--photo);background-size:cover;background-position:center;border-radius:4px;
+  border:3px solid var(--surface);overflow:hidden;transform-origin:center}
+.collage .slot.empty{background:var(--surface-2)}
+.collage .cap{font-family:var(--font-serif);font-weight:700;color:var(--frame-accent);text-align:center;
+  font-size:7.5cqw;letter-spacing:.02em;line-height:1.15}
+.collage .cap small{display:block;font-family:var(--font-round);font-weight:600;font-size:3.2cqw;letter-spacing:.24em;text-transform:uppercase;opacity:.75}
+.hintpill{background:var(--orange);color:var(--surface);border-radius:999px;font-family:var(--font-round);
+  font-weight:600;font-size:1.25cqw;padding:.7cqw 1.6cqw;display:inline-flex;align-items:center;gap:.6cqw}
+.thumbs{display:flex;gap:1cqw;margin-top:1.2cqw}
+.thumbs .th{width:6cqw;aspect-ratio:1;border-radius:8px;background:var(--photo);background-size:cover;
+  border:2px solid var(--accent);position:relative}
+.thumbs .th span{position:absolute;bottom:.2cqw;left:.2cqw;background:var(--ok);color:var(--surface);
+  font-family:var(--font-mono);font-size:.85cqw;padding:.1cqw .4cqw;border-radius:3px}
+
+/* ═══ PHONE UI ══════════════════════════════════════════════════════ */
+.p-status{position:absolute;top:0;left:0;right:0;height:7.2cqw;display:flex;align-items:center;
+  justify-content:space-between;padding:0 5cqw;font-family:var(--font-round);font-weight:700;
+  font-size:3cqw;color:var(--fg);z-index:5}
+.p-island{position:absolute;top:2.1cqw;left:50%;transform:translateX(-50%);width:27cqw;height:6.4cqw;
+  background:var(--bg-ink);border-radius:999px;z-index:6}
+.p-body{position:absolute;top:7.2cqw;left:0;right:0;bottom:6.4cqw;overflow:auto;padding:4cqw 5cqw 5cqw}
+.p-body::-webkit-scrollbar{width:0}
+.p-home{position:absolute;bottom:1.6cqw;left:50%;transform:translateX(-50%);width:34%;height:1.1cqw;
+  border-radius:999px;background:color-mix(in oklch,var(--fg) 55%,transparent);z-index:6}
+.p-h{font-family:var(--font-display);font-weight:400;text-transform:uppercase;color:var(--accent);font-size:7.4cqw;line-height:1.02}
+.p-sub{font-family:var(--font-round);font-weight:600;font-size:3.3cqw;color:var(--muted);margin-top:1.4cqw}
+.p-card{background:color-mix(in oklch,var(--bg-deep) 62%,transparent);border:1px solid var(--border);
+  border-radius:var(--radius);padding:4cqw;margin-top:4cqw}
+.p-label{font-family:var(--font-mono);font-size:2.7cqw;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.p-big{font-family:var(--font-display);font-weight:400;font-size:17cqw;line-height:.95;color:var(--fg)}
+.p-code{font-family:var(--font-mono);font-weight:600;font-size:12.5cqw;letter-spacing:.12em;color:var(--accent);
+  text-align:center;line-height:1}
+.p-btn{width:100%;display:flex;align-items:center;justify-content:center;gap:2cqw;border-radius:999px;
+  border:2px solid var(--ink);font-family:var(--font-round);font-weight:800;font-size:3.9cqw;padding:3.6cqw;transition:.15s ease}
+.p-btn.gold{background:var(--accent);color:var(--ink)}
+.p-btn.ok{background:var(--ok);color:var(--surface);border-color:var(--ok)}
+.p-btn.ghost{background:transparent;color:var(--fg);border-color:var(--border)}
+.p-btn:disabled{opacity:.4}
+.p-btn:not(:disabled):active{transform:translateY(1px)}
+.p-chiprow{display:flex;gap:2cqw;overflow-x:auto;padding-bottom:1cqw}
+.p-chiprow::-webkit-scrollbar{height:0}
+.p-chip{flex:none;border:2px solid var(--border);border-radius:999px;padding:1.8cqw 3.4cqw;
+  font-family:var(--font-round);font-weight:600;font-size:3cqw;color:var(--muted);background:transparent}
+.p-chip.on{background:var(--accent);border-color:var(--accent);color:var(--ink)}
+.p-frames{display:grid;grid-template-columns:repeat(3,1fr);gap:2.4cqw}
+.p-frames button{border-radius:10px;padding:0;border:2px solid var(--border);overflow:hidden;background:none}
+.p-frames button.on{border-color:var(--accent);box-shadow:0 0 0 .8cqw var(--accent-soft)}
+.p-frames .mini{background:var(--photo-soft);background-size:cover;aspect-ratio:3/4;
+  display:flex;flex-direction:column;justify-content:center;gap:2cqw;padding:2cqw}
+.p-frames .mini i{display:block;flex:1;background:var(--surface);border-radius:2px;border:2px solid var(--surface)}
+.p-slider{width:100%;accent-color:var(--accent);height:2.4cqw}
+.p-row{display:flex;align-items:center;justify-content:space-between;gap:3cqw}
+.switch{width:12cqw;height:6.6cqw;border-radius:999px;background:var(--border);position:relative;transition:.15s ease;flex:none}
+.switch i{position:absolute;top:.9cqw;left:.9cqw;width:4.8cqw;height:4.8cqw;border-radius:50%;background:var(--surface);transition:.15s ease}
+.switch.on{background:var(--ok)}
+.switch.on i{left:6.3cqw}
+
+/* ═══ OVERHEAD / QUEUE DISPLAY ══════════════════════════════════════ */
+.o-pad{position:absolute;inset:0;padding:3cqw 3.6cqw;display:flex;flex-direction:column;z-index:1}
+.o-grid{display:grid;grid-template-columns:1.25fr 1fr;gap:3cqw;flex:1;min-height:0}
+.o-now{background:color-mix(in oklch,var(--bg-deep) 60%,transparent);border:2px solid var(--accent);
+  border-radius:var(--radius-lg);padding:2.6cqw;display:flex;flex-direction:column;justify-content:center;gap:1.2cqw}
+.o-now .lab{font-family:var(--font-mono);font-size:1.2cqw;letter-spacing:.24em;text-transform:uppercase;color:var(--accent-2)}
+.o-now .no{font-family:var(--font-display);font-weight:400;font-size:12cqw;line-height:.9;color:var(--fg)}
+.o-now .code{font-family:var(--font-mono);font-weight:600;font-size:3.2cqw;letter-spacing:.16em;color:var(--accent)}
+.o-list{display:flex;flex-direction:column;gap:1.2cqw;min-height:0}
+.o-row{display:grid;grid-template-columns:auto 1fr auto;gap:1.6cqw;align-items:center;
+  background:color-mix(in oklch,var(--bg-deep) 45%,transparent);border:1px solid var(--border);
+  border-radius:var(--radius);padding:1.4cqw 1.8cqw}
+.o-row .n{font-family:var(--font-mono);font-weight:600;font-size:2.6cqw;color:var(--accent)}
+.o-row .who{font-family:var(--font-round);font-weight:600;font-size:1.6cqw;color:var(--fg)}
+.o-row .st{font-family:var(--font-mono);font-size:1.1cqw;letter-spacing:.1em;text-transform:uppercase;
+  padding:.35cqw 1cqw;border-radius:999px;background:var(--cream-soft);color:var(--muted)}
+.o-row.now{border-color:var(--accent)}
+.o-row.now .st{background:var(--ok);color:var(--surface)}
+
+/* ═══ ADMIN ═════════════════════════════════════════════════════════ */
+.a-shell{position:absolute;inset:0;display:grid;grid-template-columns:22cqw 1fr;background:var(--bg-deep);z-index:1}
+.a-side{background:var(--bg-ink);border-right:1px solid var(--border);padding:2.4cqw 1.8cqw;display:flex;flex-direction:column;gap:1.2cqw}
+.a-side .logo{font-family:var(--font-serif);font-weight:900;font-size:2.6cqw;color:var(--accent);margin-bottom:1.4cqw}
+.a-side a{font-family:var(--font-round);font-weight:600;font-size:1.35cqw;color:var(--muted);padding:.9cqw 1.2cqw;border-radius:8px;cursor:pointer}
+.a-side a:hover{color:var(--fg)}
+.a-side a.on{background:var(--cream-soft);color:var(--fg)}
+.a-main{padding:2.4cqw 2.6cqw;display:none;flex-direction:column;min-height:0;position:relative}
+.a-main.on{display:flex}
+.a-head{display:flex;align-items:center;justify-content:space-between;gap:2cqw;padding-bottom:1.6cqw;border-bottom:1px solid var(--border)}
+.a-head h3{font-family:var(--font-display);font-weight:400;text-transform:uppercase;font-size:2.6cqw;color:var(--fg)}
+.a-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:1.6cqw;margin-top:1.8cqw}
+.a-card{background:color-mix(in oklch,var(--bg) 70%,transparent);border:1px solid var(--border);border-radius:var(--radius);padding:1.6cqw}
+.a-card .lab{font-family:var(--font-mono);font-size:1.05cqw;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.a-card .val{font-family:var(--font-display);font-size:3.4cqw;color:var(--accent);line-height:1.1}
+.a-table{margin-top:1.8cqw;width:100%;border-collapse:collapse;font-size:1.3cqw}
+.a-table th{text-align:left;font-family:var(--font-mono);font-size:1.05cqw;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--muted);padding:.9cqw .8cqw;border-bottom:1px solid var(--border)}
+.a-table td{padding:1.1cqw .8cqw;border-bottom:1px solid color-mix(in oklch,var(--border) 55%,transparent);
+  font-family:var(--font-body);color:var(--fg)}
+.a-table td.num{font-family:var(--font-mono);font-variant-numeric:tabular-nums}
+.a-table tr.hot td{background:color-mix(in oklch,var(--accent) 10%,transparent)}
+.a-badge{font-family:var(--font-mono);font-size:1.02cqw;letter-spacing:.08em;text-transform:uppercase;
+  padding:.35cqw .9cqw;border-radius:999px}
+.a-badge.wait{background:var(--cream-soft);color:var(--muted)}
+.a-badge.print{background:color-mix(in oklch,var(--info) 30%,transparent);color:var(--fg)}
+.a-badge.done{background:var(--ok);color:var(--surface)}
+.a-foot{margin-top:auto;display:flex;align-items:center;justify-content:space-between;gap:2cqw;
+  border-top:1px solid var(--border);padding-top:1.6cqw}
+.pill.a{font-size:1.35cqw;padding:1.1cqw 2.4cqw}
+
+/* ─── footer ───────────────────────────────────────────────────────── */
+.pagefoot{position:relative;z-index:1;max-width:1440px;margin-inline:auto;padding:0 24px 48px;
+  display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap;color:var(--muted);font-size:12.5px;font-family:var(--font-round)}
+.pagefoot .mono{font-size:11px;letter-spacing:.08em;text-transform:uppercase}
+
+/* ─── toast ────────────────────────────────────────────────────────── */
+.toast{position:fixed;left:50%;bottom:28px;transform:translateX(-50%) translateY(20px);
+  background:var(--surface);color:var(--ink);font-family:var(--font-round);font-weight:700;font-size:14px;
+  padding:12px 22px;border-radius:999px;border:2px solid var(--ink);z-index:60;opacity:0;pointer-events:none;
+  transition:.25s ease;box-shadow:0 18px 40px -20px rgba(0,0,0,.7)}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* ─── phone ordering (package → order → pay → session link) ─────────── */
+.p-grid2{display:grid;grid-template-columns:1fr 1fr;gap:2.4cqw}
+.p-opt{border:2px solid var(--border);border-radius:14px;padding:2.8cqw;text-align:left;
+  background:color-mix(in oklch,var(--bg-deep) 50%,transparent)}
+.p-opt.on{border-color:var(--accent);background:color-mix(in oklch,var(--accent) 16%,transparent)}
+.p-opt .t{font-family:var(--font-round);font-weight:700;font-size:3.4cqw;line-height:1.15}
+.p-opt .s{font-family:var(--font-mono);font-size:2.5cqw;color:var(--muted);margin-top:.8cqw}
+.p-counts{display:grid;grid-template-columns:repeat(4,1fr);gap:1.8cqw}
+.p-count{border:2px solid var(--border-ink);background:var(--surface);color:var(--ink);border-radius:12px;
+  padding:2.4cqw 0;text-align:center;transition:.12s ease}
+.p-count .c{font-family:var(--font-display);font-size:5.6cqw;line-height:1}
+.p-count .p{font-family:var(--font-mono);font-size:2.1cqw;color:var(--muted-ink)}
+.p-count.on{background:var(--accent);border-color:var(--ink)}
+.p-count.on .p{color:var(--ink)}
+.p-link{display:flex;align-items:center;gap:2cqw;background:var(--surface);color:var(--ink);border-radius:12px;
+  padding:2.6cqw 3cqw;font-family:var(--font-mono);font-size:3cqw;word-break:break-all}
+.p-link .cp{margin-left:auto;flex:none;font-family:var(--font-round);font-weight:700;font-size:2.6cqw;
+  background:var(--ink);color:var(--surface);border-radius:999px;padding:1cqw 2.6cqw}
+.p-badge{font-family:var(--font-mono);font-size:2.5cqw;letter-spacing:.06em;text-transform:uppercase;
+  padding:.9cqw 2.2cqw;border-radius:999px;background:var(--ok);color:var(--surface)}
+
+/* ─── staff console — manual order ──────────────────────────────────── */
+.a-order{display:grid;grid-template-columns:1.35fr 1fr;gap:1.8cqw;margin-top:1.8cqw;flex:1;min-height:0}
+.a-panel{background:color-mix(in oklch,var(--bg) 70%,transparent);border:1px solid var(--border);
+  border-radius:14px;padding:1.6cqw;display:flex;flex-direction:column}
+.a-optgrid{display:grid;grid-template-columns:1fr 1fr;gap:1.2cqw}
+.a-opt{border:2px solid var(--border-ink);background:var(--surface);color:var(--ink);border-radius:12px;
+  padding:1.2cqw;text-align:left}
+.a-opt .t{font-family:var(--font-round);font-weight:700;font-size:1.35cqw}
+.a-opt .s{font-family:var(--font-mono);font-size:1.05cqw;color:var(--muted-ink)}
+.a-opt.on{background:var(--accent);border-color:var(--ink)}
+.a-counts{display:grid;grid-template-columns:repeat(4,1fr);gap:.8cqw;margin-top:1.2cqw}
+.a-count{border:2px solid var(--border-ink);background:var(--surface);color:var(--ink);border-radius:10px;
+  padding:.9cqw 0;text-align:center}
+.a-count .c{font-family:var(--font-display);font-size:2.2cqw;line-height:1}
+.a-count .p{font-family:var(--font-mono);font-size:.95cqw;color:var(--muted-ink)}
+.a-count.on{background:var(--accent);border-color:var(--ink)}
+.a-count.on .p{color:var(--ink)}
+.a-kv{display:flex;justify-content:space-between;gap:1cqw;padding:.75cqw 0;
+  border-bottom:1px solid color-mix(in oklch,var(--border) 50%,transparent);
+  font-family:var(--font-round);font-weight:600;font-size:1.2cqw}
+.a-kv .v{font-family:var(--font-mono);text-align:right}
+.a-methods{display:grid;grid-template-columns:1fr 1fr;gap:1cqw;margin-top:1.2cqw}
+.a-order .rowlab,.a-panel .rowlab{font-family:var(--font-round);font-weight:700;font-size:1.3cqw;color:var(--fg)}
+.a-qr{position:absolute;inset:0;background:color-mix(in oklch,var(--bg-ink) 72%,transparent);display:grid;place-items:center;z-index:5}
+.a-qr[hidden]{display:none}
+.a-qr-card{background:var(--bg-deep);border:1px solid var(--accent);border-radius:16px;padding:1.8cqw 2.2cqw;max-width:72%;
+  box-shadow:0 26px 60px -30px rgba(0,0,0,.85)}
+</style>
+</head>
+<body data-lang="vi">
+
+<header class="topbar" data-od-id="topbar">
+  <div class="topbar-in">
+    <div class="brand">
+      <span class="mark">PÓZE</span>
+      <span class="div"></span>
+      <span class="sub">Selfbooth · <span class="t-vi">Luồng dịch vụ đầu–cuối</span><span class="t-en">End-to-end service flow</span></span>
+    </div>
+    <div class="lang" role="group" aria-label="Ngôn ngữ / Language">
+      <button id="lang-vi" class="on" onclick="setLang('vi')">VI</button>
+      <button id="lang-en" onclick="setLang('en')">EN</button>
+    </div>
+  </div>
+</header>
+
+<div class="shell">
+  <nav class="rail" data-od-id="step-rail">
+    <h2>Luồng / Flow</h2>
+    <p class="hint"><span class="t-vi">Bấm từng bước để xem bề mặt tương ứng.</span><span class="t-en">Tap a step to see its surface.</span></p>
+    <ol id="rail"></ol>
+  </nav>
+
+  <main class="stage" data-od-id="stage">
+    <div class="stage-head">
+      <div>
+        <div class="idx" id="stepIdx">STEP 01 / 10</div>
+        <h1 id="stepTitle">Bảng giá &amp; gói chụp</h1>
+        <p id="stepDesc"></p>
+      </div>
+      <div class="navbtns">
+        <button class="ghost" id="btnPrev" onclick="go(S.step-1)">← <span class="t-vi">Trước</span><span class="t-en">Back</span></button>
+        <button id="btnNext" onclick="go(S.step+1)"><span class="t-vi">Tiếp</span><span class="t-en">Next</span> →</button>
+      </div>
+    </div>
+
+    <div class="surfaces" id="surfaces">
+
+      <!-- ═══ KIOSK ═══ -->
+      <div class="surface-wrap grow" data-device="kiosk" data-od-id="surface-kiosk">
+        <div class="surface-note">Kiosk · 1920 × 1080 · <span class="t-vi">màn hình chạm</span><span class="t-en">touchscreen</span></div>
+        <div class="device device--kiosk">
+
+          <!-- price board — display only; ordering happens on phone or with staff -->
+          <section class="screen" data-kscreen="priceboard">
+            <div class="k-pad">
+              <div class="k-top">
+                <div><div class="k-eyebrow">Step 01 · Pricing</div>
+                  <div class="k-h1">Bảng giá chụp</div>
+                  <div class="k-sub">Chọn gói trên điện thoại hoặc tại quầy với nhân viên</div></div>
+                <span class="k-logo">PÓZE</span>
+              </div>
+              <div class="k-cols">
+                <div class="k-group">
+                  <h3>Khổ nhỏ 1+1</h3>
+                  <div class="en">Small size 1+1 · 3–4 cut</div>
+                  <div class="k-counts">
+                    <div class="k-count"><span class="c">2</span><span class="p">80.000đ</span></div>
+                    <div class="k-count"><span class="c">4</span><span class="p">130.000đ</span></div>
+                    <div class="k-count"><span class="c">6</span><span class="p">180.000đ</span></div>
+                    <div class="k-count"><span class="c">8</span><span class="p">230.000đ</span></div>
+                  </div>
+                </div>
+                <div class="k-group">
+                  <h3>Khổ lớn 1+1</h3>
+                  <div class="en">Big size 1+1</div>
+                  <div class="k-counts">
+                    <div class="k-count"><span class="c">2</span><span class="p">110.000đ</span></div>
+                    <div class="k-count"><span class="c">3</span><span class="p">160.000đ</span></div>
+                    <div class="k-count"><span class="c">4</span><span class="p">210.000đ</span></div>
+                    <div class="k-count"><span class="c">5</span><span class="p">260.000đ</span></div>
+                  </div>
+                </div>
+              </div>
+              <div class="k-foot">
+                <span class="hintpill">◆ <span class="t-vi">Quét QR trên điện thoại hoặc gặp nhân viên để tạo order</span><span class="t-en">Scan the QR on your phone or see staff to create an order</span></span>
+              </div>
+            </div>
+          </section>
+
+
+          <!-- session entry -->
+          <section class="screen" data-kscreen="session">
+            <div class="k-pad">
+              <div class="k-top">
+                <div><div class="k-eyebrow">Step 06 · Kiosk</div>
+                  <div class="k-h1">Nhập mã phiên chụp</div>
+                  <div class="k-sub">Enter session code · mã hiển thị trên điện thoại của bạn</div></div>
+                <span class="k-logo">PÓZE</span>
+              </div>
+              <div class="k-pay" style="align-items:center">
+                <div>
+                  <div class="code-boxes" id="codeBoxes"></div>
+                  <p class="note" style="margin-top:1.8cqw;font-size:1.5cqw">
+                    <span class="t-vi">Mã phiên gồm 4 chữ số. Nhập sai 3 lần sẽ quay lại hàng đợi.</span>
+                    <span class="t-en">The session code has 4 digits. Three wrong tries sends you back to the queue.</span>
+                  </p>
+                  <div class="k-foot" style="justify-content:flex-start">
+                    <button class="pill gold k-lg" onclick="submitSession()"><span class="t-vi">Xác nhận</span><span class="t-en">Confirm</span> →</button>
+                    <button class="pill ghost k" onclick="clearCode()"><span class="t-vi">Xóa</span><span class="t-en">Clear</span></button>
+                  </div>
+                </div>
+                <div class="keypad" id="sKeypad"></div>
+              </div>
+            </div>
+          </section>
+
+          <!-- capture — continuous, no per-shot review, no frame pick -->
+          <section class="screen" data-kscreen="capture">
+            <div class="k-cam">
+              <div class="cam-strip l"></div><div class="cam-strip r"></div>
+              <div class="cam-main"></div><div class="cam-vig"></div>
+              <div class="cam-flash" id="camFlash"></div>
+              <div class="cam-bar">
+                <button class="pill danger" style="font-size:1.3cqw;padding:.8cqw 1.8cqw" onclick="stopCapture()">✕ END</button>
+                <div class="spacer"></div>
+                <div class="cam-prog"><i id="camProg"></i></div>
+                <div class="cam-chip">⏱ <span id="camTimer">0:10</span></div>
+                <div class="cam-chip">▤ <span id="camShotNo">1</span>/<span id="camShotTot">3</span></div>
+              </div>
+              <div class="cam-badge"><i></i><span class="t-vi">Đang chụp liên tiếp</span><span class="t-en">Continuous shooting</span></div>
+              <div class="cam-count">
+                <svg class="ring" viewBox="0 0 100 100">
+                  <circle class="bg" cx="50" cy="50" r="46"></circle>
+                  <circle class="fg" id="camRing" cx="50" cy="50" r="46" stroke-dasharray="289" stroke-dashoffset="0"></circle>
+                </svg>
+                <div class="num" id="camNum">3</div>
+              </div>
+              <div class="cam-foot">
+                <div class="pill cream" style="font-size:1.35cqw;padding:.9cqw 2cqw">
+                  <span class="t-vi">Ảnh <span class="mono" id="camFootNo">1</span> / <span class="mono">3</span> · nhìn vào ống kính nhé!</span>
+                  <span class="t-en">Shot <span class="mono" id="camFootNo2">1</span> / <span class="mono">3</span> · look at the lens!</span>
+                </div>
+                <div class="cam-dots" id="camDots"></div>
+              </div>
+            </div>
+          </section>
+
+          <!-- done -->
+          <section class="screen" data-kscreen="done">
+            <div class="k-pad">
+              <div class="k-top">
+                <div><div class="k-eyebrow">Step 08 · Done</div>
+                  <div class="k-h1">Chụp xong!</div>
+                  <div class="k-sub">Scan to edit your photos on your phone</div></div>
+                <span class="k-logo">PÓZE</span>
+              </div>
+              <div class="k-center" style="flex-direction:row;gap:3.4cqw">
+                <div class="qr-box" style="width:24cqw" id="qrEdit"></div>
+                <div style="text-align:left;max-width:38cqw">
+                  <div class="k-h1 sm" style="color:var(--fg)">Quét mã để chỉnh ảnh</div>
+                  <p class="note" style="font-size:1.5cqw;margin-top:.8cqw">
+                    <span class="t-vi">Mở link trên điện thoại để ghép khung, filter và zoom. Gói của bạn cho phép <b class="mono" id="kEditAllow">2</b> bản edit.</span>
+                    <span class="t-en">Open the link on your phone to frame, filter and zoom. Your package allows <b class="mono" id="kEditAllow2">2</b> edited versions.</span>
+                  </p>
+                  <div class="hintpill" style="margin-top:1.6cqw">
+                    <span class="t-vi">Vui lòng lấy ảnh in tại khay ảnh</span><span class="t-en">Please collect prints at the photo tray</span>
+                  </div>
+                </div>
+              </div>
+              <div class="k-foot">
+                <button class="pill cream k" onclick="resetAll()">↺ <span class="t-vi">Ca chụp mới</span><span class="t-en">New session</span></button>
+                <button class="pill gold k-lg" onclick="go(9)"><span class="t-vi">Mở link edit trên điện thoại</span><span class="t-en">Open phone edit link</span> →</button>
+              </div>
+            </div>
+          </section>
+        </div>
+      </div>
+
+      <!-- ═══ STAFF CONSOLE ═══ -->
+      <div class="surface-wrap grow" data-device="staff" data-od-id="surface-staff">
+        <div class="surface-note"><span class="t-vi">Quầy nhân viên</span><span class="t-en">Staff counter</span> · POS · desktop</div>
+        <div class="device device--admin">
+          <div class="a-shell">
+            <aside class="a-side">
+              <div class="logo">PÓZE</div>
+              <a class="on">＋ <span class="t-vi">Tạo order</span><span class="t-en">New order</span></a>
+              <a>▤ <span class="t-vi">Đơn hôm nay</span><span class="t-en">Today</span></a>
+              <a>▦ <span class="t-vi">Hàng đợi</span><span class="t-en">Queue</span></a>
+              <a>◷ <span class="t-vi">Ca làm</span><span class="t-en">Shift</span></a>
+            </aside>
+            <div class="a-main on">
+              <div class="a-head">
+                <div><div class="k-eyebrow">Counter 1 · Cashier</div>
+                  <h3><span class="t-vi">Tạo order thủ công</span><span class="t-en">Manual order</span></h3></div>
+                <span class="a-badge done">● <span class="t-vi">Quầy đang mở</span><span class="t-en">Counter open</span></span>
+              </div>
+
+              <div class="a-order">
+                <div class="a-panel">
+                  <div class="k-eyebrow"><span class="t-vi">1 · Gói chụp</span><span class="t-en">1 · Package</span></div>
+                  <div class="a-optgrid" style="margin-top:1.2cqw">
+                    <button class="a-opt on" data-ssize="small" onclick="staffSize('small')"><div class="t">Khổ nhỏ 1+1</div><div class="s">3–4 cut</div></button>
+                    <button class="a-opt" data-ssize="big" onclick="staffSize('big')"><div class="t">Khổ lớn 1+1</div><div class="s">Big size</div></button>
+                  </div>
+                  <div class="a-counts" id="sCounts"></div>
+                  <div class="a-kv" style="margin-top:auto;border-bottom:0"><span><span class="t-vi">Gói đã chọn</span><span class="t-en">Selected</span></span><span class="v" id="sPkgLine">Khổ nhỏ 1+1 · 4 ảnh</span></div>
+                </div>
+
+                <div class="a-panel">
+                  <div class="k-eyebrow"><span class="t-vi">2 · Thanh toán</span><span class="t-en">2 · Payment</span></div>
+                  <div class="a-methods">
+                    <button class="a-opt on" id="sPayCash" onclick="staffPay('cash')"><div class="t">₫ <span class="t-vi">Tiền mặt</span><span class="t-en">Cash</span></div></button>
+                    <button class="a-opt" id="sPayQR" onclick="staffPay('qr')"><div class="t">▣ QR</div></button>
+                  </div>
+                  <div class="a-kv" style="margin-top:1.6cqw"><span><span class="t-vi">Khách đưa</span><span class="t-en">Received</span></span><span class="v" id="sRecv">0đ</span></div>
+                  <div class="a-methods" style="grid-template-columns:repeat(3,1fr);margin-top:.8cqw">
+                    <button class="a-opt" style="text-align:center" onclick="staffRecv(50000)"><div class="t mono">+50k</div></button>
+                    <button class="a-opt" style="text-align:center" onclick="staffRecv(100000)"><div class="t mono">+100k</div></button>
+                    <button class="a-opt" style="text-align:center" onclick="staffRecv(200000)"><div class="t mono">+200k</div></button>
+                  </div>
+                  <div class="a-kv"><span><span class="t-vi">Tiền thừa</span><span class="t-en">Change</span></span><span class="v" id="sChange">0đ</span></div>
+                  <div class="a-kv" style="border-bottom:0"><span><span class="t-vi">Tổng</span><span class="t-en">Total</span></span><span class="v" id="sTotal" style="color:var(--accent);font-size:1.7cqw">130.000đ</span></div>
+                  <button class="pill gold" style="margin-top:auto;font-size:1.35cqw;padding:1.05cqw 2.4cqw" onclick="staffCreate()">＋ <span class="t-vi">Tạo order &amp; cấp QR</span><span class="t-en">Create order &amp; issue QR</span></button>
+                </div>
+              </div>
+
+              <div class="a-qr" id="sQR" hidden>
+                <div class="a-qr-card">
+                  <div class="k-eyebrow"><span class="t-vi">Order đã tạo · khách quét để vào session</span><span class="t-en">Order created · guest scans to enter session</span></div>
+                  <div style="display:flex;gap:2cqw;align-items:center;margin-top:1.4cqw">
+                    <div class="qr-box" style="width:13cqw;flex:none" id="sQRimg"></div>
+                    <div>
+                      <div class="mono" style="font-size:4.4cqw;color:var(--accent);line-height:1" id="sQRqueue">#12</div>
+                      <div class="a-kv" style="border-bottom:0"><span><span class="t-vi">Mã đơn</span><span class="t-en">Order</span></span><span class="v" id="sQRorder">#ORD-4821</span></div>
+                      <div class="mono" style="font-size:1.2cqw;color:var(--muted);margin-top:.3cqw" id="sQRlink">poze.vn/s/4821</div>
+                    </div>
+                  </div>
+                  <div style="display:flex;gap:1cqw;margin-top:1.6cqw">
+                    <button class="pill cream" style="font-size:1.2cqw;padding:.9cqw 2cqw" onclick="staffCloseQR()"><span class="t-vi">Đóng</span><span class="t-en">Close</span></button>
+                    <button class="pill gold" style="font-size:1.2cqw;padding:.9cqw 2cqw" onclick="staffNew()">↺ <span class="t-vi">Đơn mới</span><span class="t-en">New order</span></button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══ PHONE ═══ -->
+      <div class="surface-wrap" data-device="phone" data-od-id="surface-phone">
+        <div class="surface-note"><span class="t-vi">Điện thoại khách</span><span class="t-en">Customer phone</span> · mobile web</div>
+        <div class="device device--phone">
+          <div class="p-status"><span class="mono">9:41</span><span class="mono">▮▮▮ 5G ▰</span></div>
+          <div class="p-island"></div>
+
+          <!-- order · package -->
+          <section class="screen" data-pscreen="order-pkg">
+            <div class="p-body">
+              <div class="p-row">
+                <div><div class="p-label">Mộc Selfbooth</div>
+                  <div style="font-family:var(--font-display);font-size:6.6cqw;color:var(--accent);line-height:1.05">Chọn gói chụp</div></div>
+                <div class="p-label" style="text-align:right">Step 01<br>Bảng giá</div>
+              </div>
+              <div class="p-label" style="margin-top:4cqw"><span class="t-vi">Khổ in</span><span class="t-en">Print size</span></div>
+              <div class="p-grid2" style="margin-top:1.6cqw">
+                <button class="p-opt on" data-osize="small" onclick="orderSize('small')">
+                  <div class="t">Khổ nhỏ 1+1</div><div class="s">3–4 cut</div></button>
+                <button class="p-opt" data-osize="big" onclick="orderSize('big')">
+                  <div class="t">Khổ lớn 1+1</div><div class="s">Big size</div></button>
+              </div>
+              <div class="p-label" style="margin-top:4cqw"><span class="t-vi">Số ảnh in</span><span class="t-en">Number of prints</span></div>
+              <div class="p-counts" style="margin-top:1.6cqw" id="pCounts"></div>
+              <div class="p-card" style="margin-top:4cqw">
+                <div class="p-row"><span class="p-label"><span class="t-vi">Tổng tiền</span><span class="t-en">Total</span></span>
+                  <span class="mono" style="font-size:6cqw;color:var(--accent)" id="pTotal">130.000đ</span></div>
+                <div class="p-label" style="margin-top:1.6cqw" id="pPkgLine">Khổ nhỏ 1+1 · 4 ảnh · 2 bản edit</div>
+              </div>
+              <div style="margin-top:4cqw;display:flex;flex-direction:column;gap:2.4cqw">
+                <button class="p-btn gold" onclick="setPhone('order-pay')"><span class="t-vi">Tiếp tục thanh toán</span><span class="t-en">Continue to payment</span> ▸</button>
+                <button class="p-btn ghost" onclick="toast('Nhân viên sẽ tạo order tại quầy')">☞ <span class="t-vi">Nhờ nhân viên tạo tại quầy</span><span class="t-en">Ask staff at the counter</span></button>
+              </div>
+            </div>
+            <div class="p-home"></div>
+          </section>
+
+          <!-- order · payment -->
+          <section class="screen" data-pscreen="order-pay">
+            <div class="p-body">
+              <div class="p-row">
+                <div><div class="p-label">Step 02</div>
+                  <div style="font-family:var(--font-display);font-size:6.6cqw;color:var(--accent);line-height:1.05">Thanh toán</div></div>
+                <button class="p-chip" onclick="setPhone('order-pkg')">‹ <span class="t-vi">Sửa gói</span><span class="t-en">Edit</span></button>
+              </div>
+              <div class="p-card" style="margin-top:3.4cqw;text-align:center">
+                <div class="p-label"><span class="t-vi">Số tiền</span><span class="t-en">Amount</span></div>
+                <div class="mono" style="font-size:9cqw;color:var(--accent);margin-top:1cqw" id="pPayAmount">130.000đ</div>
+              </div>
+              <div class="p-label" style="margin-top:4cqw"><span class="t-vi">Cách thanh toán</span><span class="t-en">Payment method</span></div>
+              <div class="p-grid2" style="margin-top:1.6cqw">
+                <button class="p-opt on" data-opay="qr" onclick="orderPay('qr')"><div class="t"><span class="t-vi">QR / Ví điện tử</span><span class="t-en">QR / e-wallet</span></div><div class="s"><span class="t-vi">Chuyển khoản</span><span class="t-en">Transfer</span></div></button>
+                <button class="p-opt" data-opay="cash" onclick="orderPay('cash')"><div class="t"><span class="t-vi">Tiền mặt</span><span class="t-en">Cash</span></div><div class="s"><span class="t-vi">Trả tại quầy</span><span class="t-en">At counter</span></div></button>
+              </div>
+              <div id="pQrWrap" style="margin-top:3.4cqw;text-align:center">
+                <div class="qr-box" style="width:46cqw;margin-inline:auto" id="pOrderQr"></div>
+                <p class="p-sub" style="font-size:2.9cqw"><span class="t-vi">Quét mã để thanh toán</span><span class="t-en">Scan to pay</span></p>
+              </div>
+              <div id="pCashWrap" hidden style="margin-top:3.4cqw">
+                <div class="p-card">
+                  <div class="p-label"><span class="t-vi">Trả tiền mặt tại quầy</span><span class="t-en">Pay cash at the counter</span></div>
+                  <p class="p-sub" style="font-size:2.9cqw;margin-top:1cqw"><span class="t-vi">Đưa mã order này cho nhân viên và thanh toán trực tiếp.</span><span class="t-en">Show this order to staff and pay directly.</span></p>
+                  <div class="mono" style="font-size:4.4cqw;color:var(--accent);margin-top:1.4cqw" id="pCashOrder">#ORD-4821</div>
+                </div>
+              </div>
+              <div style="margin-top:4cqw">
+                <button class="p-btn ok" onclick="orderCreate('phone')"><span class="t-vi">Xác nhận thanh toán</span><span class="t-en">Confirm payment</span> ✓</button>
+              </div>
+            </div>
+            <div class="p-home"></div>
+          </section>
+
+          <!-- order · session link -->
+          <section class="screen" data-pscreen="order-link">
+            <div class="p-body">
+              <div class="p-label" style="color:var(--ok)">● <span class="t-vi">Order đã tạo</span><span class="t-en">Order created</span></div>
+              <div class="p-h" style="margin-top:1.4cqw">Link session</div>
+              <div class="p-sub"><span class="t-vi">Mở link để vào hàng đợi</span><span class="t-en">Open the link to join the queue</span></div>
+              <div class="p-card" style="margin-top:3cqw">
+                <div class="p-label">Order</div>
+                <div class="mono" style="font-size:5cqw;color:var(--accent);margin-top:1cqw" id="pLinkOrder">#ORD-4821</div>
+                <div class="p-label" style="margin-top:2.6cqw"><span class="t-vi">Gói chụp</span><span class="t-en">Package</span></div>
+                <div style="font-family:var(--font-round);font-weight:700;font-size:3.6cqw;margin-top:1cqw" id="pLinkPkg">Khổ nhỏ 1+1 · 4 ảnh</div>
+              </div>
+              <div class="p-link" style="margin-top:3cqw">poze.vn/s/4821<span class="cp" onclick="toast('Đã copy link · Link copied')">Copy</span></div>
+              <div class="p-card" style="margin-top:3cqw;display:flex;align-items:center;gap:3cqw">
+                <div class="qr-box" style="width:26cqw;flex:none" id="pLinkQr"></div>
+                <div><div class="p-label"><span class="t-vi">Số hàng đợi</span><span class="t-en">Queue number</span></div>
+                  <div class="mono" style="font-size:8cqw;color:var(--accent);line-height:1.1" id="pLinkQueue">#12</div>
+                  <div class="p-label" style="margin-top:1cqw"><span class="t-vi">Còn 3 lượt</span><span class="t-en">3 ahead</span></div></div>
+              </div>
+              <div style="margin-top:4cqw">
+                <button class="p-btn gold" onclick="go(4)"><span class="t-vi">Vào hàng đợi</span><span class="t-en">Join the queue</span> ▸</button>
+              </div>
+            </div>
+            <div class="p-home"></div>
+          </section>
+
+          <!-- queue -->
+          <section class="screen on" data-pscreen="queue">
+            <div class="p-body">
+              <div class="p-label">Mộc Selfbooth</div>
+              <div class="p-h">Số hàng đợi</div>
+              <div class="p-sub">Your queue number</div>
+              <div class="p-card" style="text-align:center">
+                <div class="p-big" id="pQueueNo">#12</div>
+                <div class="p-label" style="margin-top:1.4cqw"><span class="t-vi">Còn 3 lượt trước bạn</span><span class="t-en">3 parties ahead of you</span></div>
+              </div>
+              <div class="p-card">
+                <div class="p-label"><span class="t-vi">Gói chụp</span><span class="t-en">Package</span></div>
+                <div style="font-family:var(--font-round);font-weight:700;font-size:4.2cqw;margin-top:1.2cqw" id="pPkg">Khổ nhỏ 1+1 · 4 ảnh</div>
+                <div class="p-label" style="margin-top:2.4cqw"><span class="t-vi">Thời gian dự kiến</span><span class="t-en">Estimated wait</span></div>
+                <div style="font-family:var(--font-mono);font-size:5cqw;color:var(--accent);margin-top:.6cqw">≈ 6 phút</div>
+              </div>
+              <p class="p-sub" style="font-size:2.9cqw;margin-top:3cqw">
+                <span class="t-vi">Giữ màn hình này. Khi tới lượt, mã phiên chụp sẽ hiện ở đây và trên màn hình lớn.</span>
+                <span class="t-en">Keep this screen open. When it is your turn, the session code appears here and on the big screen.</span>
+              </p>
+            </div>
+            <div class="p-home"></div>
+          </section>
+
+          <!-- turn -->
+          <section class="screen" data-pscreen="turn">
+            <div class="p-body">
+              <div class="p-label" style="color:var(--ok)">● <span class="t-vi">Đến lượt bạn</span><span class="t-en">It's your turn</span></div>
+              <div class="p-h" style="margin-top:1.4cqw">Mã phiên chụp</div>
+              <div class="p-sub">Enter this code at the kiosk</div>
+              <div class="p-card" style="text-align:center;border-color:var(--accent)">
+                <div class="p-code" id="pCode">4 8 2 1</div>
+                <div class="p-label" style="margin-top:2cqw"><span class="t-vi">Có hiệu lực trong</span><span class="t-en">Valid for</span> <span class="mono" id="pCodeTtl">02:00</span></div>
+              </div>
+              <div class="p-card">
+                <div class="p-label"><span class="t-vi">Các bước tiếp theo</span><span class="t-en">Next steps</span></div>
+                <ol style="margin:1.6cqw 0 0;padding-left:5cqw;font-family:var(--font-round);font-weight:600;font-size:3.1cqw;line-height:1.7;color:var(--fg)">
+                  <li><span class="t-vi">Vào buồng chụp</span><span class="t-en">Step into the booth</span></li>
+                  <li><span class="t-vi">Nhập mã <b class="mono" id="pCode2">4821</b></span><span class="t-en">Enter code <b class="mono" id="pCode3">4821</b></span></li>
+                  <li><span class="t-vi">Chụp 3 tấm liên tiếp</span><span class="t-en">Take 3 shots in a row</span></li>
+                </ol>
+              </div>
+            </div>
+            <div class="p-home"></div>
+          </section>
+
+          <!-- edit -->
+          <section class="screen" data-pscreen="edit">
+            <div class="p-body" style="padding-top:2cqw">
+              <div class="p-row">
+                <div><div class="p-label">Mộc Selfbooth</div>
+                  <div style="font-family:var(--font-display);font-size:6.6cqw;color:var(--accent);line-height:1.05">Chỉnh sửa ảnh</div></div>
+                <div class="p-label" style="text-align:right"><span class="t-vi">Bản edit</span><span class="t-en">Edits</span><br><span class="mono" style="font-size:4.4cqw;color:var(--accent)" id="pEditCount">1 / 2</span></div>
+              </div>
+
+              <div style="display:grid;place-items:center;margin-top:3cqw">
+                <div class="collage" id="pCollage" style="width:52%"></div>
+              </div>
+
+              <div class="p-label" style="margin-top:4cqw"><span class="t-vi">Khung</span><span class="t-en">Frame</span></div>
+              <div class="p-frames" style="margin-top:1.6cqw" id="pFrames"></div>
+
+              <div class="p-label" style="margin-top:3.4cqw">Filter</div>
+              <div class="p-chiprow" style="margin-top:1.6cqw" id="pFilters"></div>
+
+              <div class="p-card" style="padding:3cqw 3.4cqw">
+                <div class="p-row"><span style="font-family:var(--font-round);font-weight:700;font-size:3.4cqw"><span class="t-vi">Làm đẹp</span><span class="t-en">Beauty</span></span>
+                  <button class="switch on" id="pBeauty" onclick="toggleBeauty(this)"><i></i></button></div>
+                <div class="p-row" style="margin-top:3cqw"><span style="font-family:var(--font-round);font-weight:700;font-size:3.4cqw">Zoom</span>
+                  <span class="mono" style="font-size:3.2cqw;color:var(--accent)" id="pZoomVal">1.0×</span></div>
+                <input class="p-slider" style="margin-top:1.6cqw" type="range" min="1" max="1.6" step="0.05" value="1" oninput="setZoom(this.value)">
+              </div>
+
+              <div style="margin-top:3.4cqw;display:flex;flex-direction:column;gap:2.4cqw">
+                <button class="p-btn gold" onclick="sendToPrint()"><span class="t-vi">Gửi in</span><span class="t-en">Send to print</span> ▸</button>
+                <button class="p-btn ghost" onclick="toast('Đã lưu ảnh vào điện thoại')">⤓ <span class="t-vi">Tải ảnh về máy</span><span class="t-en">Download image</span></button>
+              </div>
+            </div>
+            <div class="p-home"></div>
+          </section>
+
+          <!-- sent -->
+          <section class="screen" data-pscreen="sent">
+            <div class="p-body">
+              <div style="display:grid;place-items:center;height:100%;text-align:center">
+                <div>
+                  <div style="font-size:16cqw;line-height:1;color:var(--ok)">✓</div>
+                  <div class="p-h" style="margin-top:2cqw">Đã gửi in</div>
+                  <div class="p-sub">Your order is queued at the counter</div>
+                  <div class="p-card" style="margin-top:5cqw;text-align:left">
+                    <div class="p-label"><span class="t-vi">Mã đơn</span><span class="t-en">Order</span></div>
+                    <div class="mono" style="font-size:5cqw;color:var(--accent);margin-top:1cqw" id="pOrderId">#ORD-4821</div>
+                    <div class="p-label" style="margin-top:3cqw"><span class="t-vi">Loại in</span><span class="t-en">Print type</span></div>
+                    <div style="font-family:var(--font-round);font-weight:700;font-size:3.6cqw;margin-top:1cqw" id="pPrintType">2 × 5×15</div>
+                  </div>
+                  <p class="p-sub" style="font-size:2.9cqw;margin-top:4cqw">
+                    <span class="t-vi">Nhân viên sẽ in và bạn nhận ảnh tại khay ảnh.</span>
+                    <span class="t-en">Staff will print it — collect your photos at the tray.</span>
+                  </p>
+                </div>
+              </div>
+            </div>
+            <div class="p-home"></div>
+          </section>
+        </div>
+      </div>
+
+      <!-- ═══ OVERHEAD ═══ -->
+      <div class="surface-wrap grow" data-device="overhead" data-od-id="surface-overhead">
+        <div class="surface-note"><span class="t-vi">Màn hình hàng đợi (treo tường)</span><span class="t-en">Overhead queue screen</span> · 1920 × 1080</div>
+        <div class="device device--overhead">
+          <section class="screen on" data-oscreen="queue">
+            <div class="o-pad">
+              <div class="k-top" style="margin-bottom:1.8cqw">
+                <div><div class="k-eyebrow">Mộc Selfbooth</div>
+                  <div class="k-h1 sm" style="color:var(--accent)">Hàng đợi hôm nay</div></div>
+                <span class="k-logo">PÓZE</span>
+              </div>
+              <div class="o-grid">
+                <div class="o-now">
+                  <div class="lab"><span class="t-vi">Đang phục vụ</span><span class="t-en">Now serving</span></div>
+                  <div class="no" id="oNowNo">#11</div>
+                  <div class="code"><span class="t-vi">Mã phiên</span><span class="t-en">Session</span> · <span id="oNowCode">1177</span></div>
+                </div>
+                <div class="o-list" id="oList"></div>
+              </div>
+              <div class="k-foot" style="margin-top:1.8cqw">
+                <span class="hintpill">◆ <span class="t-vi">Quét mã QR trên vé của bạn để vào hàng đợi</span><span class="t-en">Scan the QR on your ticket to join the queue</span></span>
+              </div>
+            </div>
+          </section>
+          <section class="screen" data-oscreen="turn">
+            <div class="o-pad">
+              <div class="k-top" style="margin-bottom:1.8cqw">
+                <div><div class="k-eyebrow">Mộc Selfbooth</div>
+                  <div class="k-h1 sm" style="color:var(--accent)">Hàng đợi hôm nay</div></div>
+                <span class="k-logo">PÓZE</span>
+              </div>
+              <div class="o-grid">
+                <div class="o-now" style="border-color:var(--ok)">
+                  <div class="lab" style="color:var(--ok)"><span class="t-vi">Đến lượt · mời vào buồng chụp</span><span class="t-en">Now serving · please enter</span></div>
+                  <div class="no" id="oNowNo2">#12</div>
+                  <div class="code"><span class="t-vi">Mã phiên chụp</span><span class="t-en">Session code</span> · <span id="oNowCode2" style="font-size:4.4cqw">4821</span></div>
+                </div>
+                <div class="o-list" id="oList2"></div>
+              </div>
+            </div>
+          </section>
+        </div>
+      </div>
+
+      <!-- ═══ ADMIN ═══ -->
+      <div class="surface-wrap grow" data-device="admin" data-od-id="surface-admin">
+        <div class="surface-note">Admin · <span class="t-vi">máy in &amp; duyệt đơn</span><span class="t-en">print &amp; order desk</span> · desktop</div>
+        <div class="device device--admin">
+          <div class="a-shell">
+            <aside class="a-side">
+              <div class="logo">PÓZE</div>
+              <a class="on">▤ <span class="t-vi">Đơn in</span><span class="t-en">Print queue</span></a>
+              <a>▦ <span class="t-vi">Hàng đợi</span><span class="t-en">Queue</span></a>
+              <a>◲ <span class="t-vi">Máy &amp; giấy</span><span class="t-en">Printer &amp; paper</span></a>
+              <a>◷ <span class="t-vi">Doanh thu ca</span><span class="t-en">Shift revenue</span></a>
+            </aside>
+            <div class="a-main">
+              <div class="a-head">
+                <div>
+                  <div class="k-eyebrow">Step 10 · Admin</div>
+                  <h3><span class="t-vi">Đơn in đang chờ</span><span class="t-en">Print orders</span></h3>
+                </div>
+                <div style="display:flex;gap:1.2cqw;align-items:center">
+                  <span class="a-badge done">● <span class="t-vi">Máy in sẵn sàng</span><span class="t-en">Printer ready</span></span>
+                </div>
+              </div>
+              <div class="a-cards">
+                <div class="a-card"><div class="lab"><span class="t-vi">Chờ in</span><span class="t-en">Waiting</span></div><div class="val" id="aWait">1</div></div>
+                <div class="a-card"><div class="lab"><span class="t-vi">Đã in hôm nay</span><span class="t-en">Printed today</span></div><div class="val" id="aDone">28</div></div>
+                <div class="a-card"><div class="lab"><span class="t-vi">Giấy còn lại</span><span class="t-en">Paper left</span></div><div class="val">184</div></div>
+              </div>
+              <table class="a-table">
+                <thead><tr>
+                  <th><span class="t-vi">Mã đơn</span><span class="t-en">Order</span></th>
+                  <th><span class="t-vi">Khách</span><span class="t-en">Guest</span></th>
+                  <th><span class="t-vi">Gói</span><span class="t-en">Package</span></th>
+                  <th><span class="t-vi">Loại in</span><span class="t-en">Print</span></th>
+                  <th><span class="t-vi">Trạng thái</span><span class="t-en">Status</span></th>
+                </tr></thead>
+                <tbody>
+                  <tr class="hot">
+                    <td class="num" id="aOrderId">#ORD-4821</td>
+                    <td>Khách · #12</td>
+                    <td><span class="t-vi">Khổ nhỏ 1+1 · 4 ảnh</span><span class="t-en">Small 1+1 · 4 shots</span></td>
+                    <td class="num" id="aPrintType">2 × 5×15</td>
+                    <td><span class="a-badge wait" id="aStatus"><span class="t-vi">Chờ in</span><span class="t-en">Waiting</span></span></td>
+                  </tr>
+                  <tr>
+                    <td class="num">#ORD-4820</td><td>Khách · #11</td>
+                    <td><span class="t-vi">Khổ lớn 1+1 · 3 ảnh</span><span class="t-en">Big 1+1 · 3 shots</span></td>
+                    <td class="num">1 × 10×15</td>
+                    <td><span class="a-badge done"><span class="t-vi">Đã in</span><span class="t-en">Printed</span></span></td>
+                  </tr>
+                  <tr>
+                    <td class="num">#ORD-4819</td><td>Khách · #10</td>
+                    <td><span class="t-vi">Khổ nhỏ 1+1 · 2 ảnh</span><span class="t-en">Small 1+1 · 2 shots</span></td>
+                    <td class="num">2 × 5×15</td>
+                    <td><span class="a-badge done"><span class="t-vi">Đã in</span><span class="t-en">Printed</span></span></td>
+                  </tr>
+                </tbody>
+              </table>
+              <div class="a-foot">
+                <div style="display:flex;gap:1.4cqw;align-items:center">
+                  <div class="collage" style="width:7cqw" id="aThumb"></div>
+                  <div>
+                    <div class="k-eyebrow"><span class="t-vi">Xem trước bản in</span><span class="t-en">Print preview</span></div>
+                    <div style="font-family:var(--font-round);font-weight:700;font-size:1.5cqw">#ORD-4821 · <span class="mono">2 × 5×15</span></div>
+                  </div>
+                </div>
+                <button class="pill ok a" id="aPrintBtn" onclick="adminPrint()"><svg width="1.35em" height="1.35em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"><path d="M6 9V3h12v6M6 18H4v-7h16v7h-2M8 14h8v7H8z"/></svg> <span class="t-vi">Bấm in</span><span class="t-en">Print</span></button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<footer class="pagefoot" data-od-id="footer">
+  <span>© 2026 PÓZE Selfbooth · Mộc / Ban Công</span>
+  <span class="mono">Prototype · <span class="t-vi">demo 10s mỗi ca chụp liên tiếp</span><span class="t-en">10s demo per continuous session</span> · VI/EN</span>
+</footer>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ═══════════════════════════════════════════════════════════════════════
+   STATE — one shared session across all four surfaces.
+   ═══════════════════════════════════════════════════════════════════════ */
+const S = {
+  step: 1,
+  pkg: { size:'small', count:4, price:130000, label:'Khổ nhỏ 1+1 · 4 ảnh', edits:2 },
+  pay: { method:null, cash:0, paid:false },
+  queue: { no:12, ahead:3 },
+  session: '4821',
+  code: '',
+  capture: { shots:[], index:0, total:3, timer:null, running:false, session:10, elapsed:0 },
+  edit: { frame:0, filter:0, zoom:1, beauty:true, count:1 },
+  order: { id:'#ORD-4821', type:'2 × 5×15', status:'wait' }
+};
+
+const STEPS = [
+  { vi:'Bảng giá & gói chụp', en:'Pricing & package', dev:['kiosk','phone','staff'], ks:'priceboard', ps:'order-pkg', desc:{vi:'Bảng giá treo ở quầy. Khách tự chọn gói trên điện thoại, hoặc nhân viên tạo order thủ công tại quầy POS.',en:'Prices are displayed at the booth. The guest picks a package on their phone, or staff builds the order in the counter POS.'} },
+  { vi:'Thanh toán', en:'Payment', dev:['phone','staff'], ps:'order-pay', desc:{vi:'Khách trả bằng QR/ví điện tử hoặc tiền mặt ngay trên điện thoại — hoặc trả trực tiếp cho nhân viên tại quầy.',en:'The guest pays by QR/e-wallet or cash on their phone — or pays the staff directly at the counter.'} },
+  { vi:'Tạo order → link session / QR', en:'Order → session link / QR', dev:['phone','staff'], ps:'order-link', desc:{vi:'Order được tạo: khách nhận link session trên điện thoại. Nếu nhân viên tạo thì quầy hiện mã QR để khách quét vào session.',en:'Once created, the guest gets a session link on their phone. If staff created it, the counter shows a QR for the guest to scan into the session.'} },
+  { vi:'Vào session — số hàng đợi', en:'Enter session — queue number', dev:['phone','overhead'], ks:null, ps:'queue', os:'queue', desc:{vi:'Điện thoại hiện số hàng đợi, màn hình lớn hiện danh sách đang chờ.',en:'The phone shows the queue number; the overhead screen shows the live list.'} },
+  { vi:'Đến lượt — mã phiên chụp', en:'Your turn — session code', dev:['phone','overhead'], ks:null, ps:'turn', os:'turn', desc:{vi:'Khi tới lượt, mã phiên 4 số hiện trên điện thoại và màn hình lớn cùng lúc.',en:'At your turn the 4-digit session code appears on both the phone and the big screen.'} },
+  { vi:'Nhập mã phiên ở kiosk', en:'Enter session code', dev:['kiosk'], ks:'session', desc:{vi:'Khách nhập mã phiên trên kiosk để mở buồng chụp.',en:'The guest types the session code on the kiosk to unlock the booth.'} },
+  { vi:'Chụp liên tiếp (countdown)', en:'Continuous capture (countdown)', dev:['kiosk'], ks:'capture', desc:{vi:'Buồng chụp tự động chụp liên tiếp, có countdown ngắn giữa các tấm (demo 10 giây). Không có màn review từng ảnh và không chọn frame ở kiosk — khách chọn khung khi chỉnh ảnh trên điện thoại.',en:'The booth fires shots back-to-back with a short countdown between them (10-second demo). There is no per-shot review and no frame pick at the kiosk — framing happens later in the phone editor.'} },
+  { vi:'Hoàn tất — QR sang link edit', en:'Done — QR to edit', dev:['kiosk'], ks:'done', desc:{vi:'Kiosk hiện mã QR mở link edit trên điện thoại. Số bản edit phụ thuộc gói chụp.',en:'The kiosk shows a QR that opens the phone edit link. Edit count depends on the package.'} },
+  { vi:'Edit trên điện thoại', en:'Edit on phone', dev:['phone'], ps:'edit', desc:{vi:'Ghép ảnh vào frame, filter, làm đẹp, zoom — rồi gửi in.',en:'Compose into the frame, filter, beautify, zoom — then send to print.'} },
+  { vi:'Admin bấm in', en:'Admin prints', dev:['admin'], desc:{vi:'Đơn hiện ở quầy in; nhân viên bấm In và khách nhận ảnh tại khay.',en:'The order lands at the print desk; staff hit Print and the guest collects at the tray.'} }
+];
+
+/* ═══ tiny QR renderer (deterministic, no network) ═══════════════════ */
+function qrSVG(seed, n=25){
+  let h = 2166136261 >>> 0;
+  for (let i=0;i<seed.length;i++){ h ^= seed.charCodeAt(i); h = Math.imul(h, 16777619) >>> 0; }
+  const rnd = () => { h ^= h<<13; h>>>=0; h ^= h>>>17; h ^= h<<5; h>>>=0; return h/4294967295; };
+  const inFinder = (x,y) => {
+    const box = (bx,by) => x>=bx && x<bx+7 && y>=by && y<by+7;
+    return box(0,0) || box(n-7,0) || box(0,n-7);
+  };
+  let cells = '';
+  for (let y=0;y<n;y++) for (let x=0;x<n;x++){
+    if (inFinder(x,y)) continue;
+    if (rnd() > .52) cells += `<rect x="${x}" y="${y}" width="1" height="1"/>`;
+  }
+  const finder = (bx,by) => `<rect x="${bx}" y="${by}" width="7" height="7"/><rect x="${bx+1}" y="${by+1}" width="5" height="5" fill="var(--surface)"/><rect x="${bx+2}" y="${by+2}" width="3" height="3"/>`;
+  return `<svg viewBox="-1 -1 ${n+2} ${n+2}" shape-rendering="crispEdges" fill="currentColor" style="background:var(--surface);border-radius:8px">${cells}${finder(0,0)}${finder(n-7,0)}${finder(0,n-7)}</svg>`;
+}
+
+/* ═══ helpers ════════════════════════════════════════════════════════ */
+const $ = (s, r=document) => r.querySelector(s);
+const $$ = (s, r=document) => [...r.querySelectorAll(s)];
+const vnd = n => n.toLocaleString('vi-VN') + 'đ';
+
+function toast(msg){
+  const t = $('#toast'); t.textContent = msg; t.classList.add('show');
+  clearTimeout(t._t); t._t = setTimeout(()=>t.classList.remove('show'), 1900);
+}
+
+function setLang(l){
+  document.body.dataset.lang = l;
+  $('#lang-vi').classList.toggle('on', l==='vi');
+  $('#lang-en').classList.toggle('on', l==='en');
+  renderStep();
+  syncPricing();
+}
+
+/* ═══ step machine ═══════════════════════════════════════════════════ */
+function buildRail(){
+  $('#rail').innerHTML = STEPS.map((s,i)=>`
+    <li><button onclick="go(${i+1})" data-step="${i+1}">
+      <span class="n">${String(i+1).padStart(2,'0')}</span>
+      <span class="lbl"><span class="t-vi">${s.vi}</span><span class="t-en">${s.en}</span></span>
+    </button></li>`).join('');
+}
+
+function renderStep(){
+  const s = STEPS[S.step-1];
+  $('#stepIdx').textContent = `STEP ${String(S.step).padStart(2,'0')} / 10`;
+  const lang = document.body.dataset.lang;
+  $('#stepTitle').textContent = lang==='en' ? s.en : s.vi;
+  $('#stepDesc').textContent = lang==='en' ? s.desc.en : s.desc.vi;
+  $('#btnPrev').disabled = S.step===1;
+  $('#btnNext').disabled = S.step===10;
+  $$('#rail button').forEach(b=>{
+    const n = +b.dataset.step;
+    b.setAttribute('aria-current', n===S.step ? 'true':'false');
+    b.classList.toggle('done', n < S.step);
+  });
+  // device visibility
+  $$('[data-device]').forEach(w=> w.hidden = !s.dev.includes(w.dataset.device));
+  if (s.ks) setKiosk(s.ks);
+  if (s.ps) setPhone(s.ps);
+  if (s.os) setOS(s.os);
+}
+
+function go(n){
+  if (n<1 || n>10) return;
+  S.step = n;
+  // arriving at edit / admin without a real capture session → seed the 3 demo shots
+  if ((n===9 || n===10) && S.capture.shots.length===0){
+    S.capture.shots = [0,1,2].map(i=>({ seed:'demo-'+i }));
+    S.capture.index = S.capture.total;
+  }
+  // step 3 always reflects the phone draft (unless staff already created the order)
+  if (n===3 && (!S.order.created || S.order.source==='phone')) orderCreate('phone', true);
+  if (n===7 && !S.capture.running) startCapture();
+  if (n===4 || n===5) renderQueueList();
+  if (n===9) renderPhoneEdit();
+  if (n===10) resetAdminOrder();
+  renderStep();
+}
+
+function setKiosk(name){
+  S.kioskScreen = name;
+  $$('[data-kscreen]').forEach(el=> el.classList.toggle('on', el.dataset.kscreen===name));
+}
+function setPhone(name){
+  $$('[data-pscreen]').forEach(el=> el.classList.toggle('on', el.dataset.pscreen===name));
+}
+function setOS(name){
+  $$('[data-oscreen]').forEach(el=> el.classList.toggle('on', el.dataset.oscreen===name));
+}
+
+/* overhead queue list — rebuilt from the shared queue state */
+function renderQueueList(){
+  const base = S.queue.no;
+  const rows = [
+    { n:base,     who:'Khách',        now:true,  vi:'Đang chụp', en:'Shooting' },
+    { n:base + 1, who:'Khách',        now:false, vi:'Chờ',       en:'Waiting' },
+    { n:base + 2, who:'Khách',        now:false, vi:'Chờ',       en:'Waiting' },
+    { n:base + 3, who:'Khách',        now:false, vi:'Chờ',       en:'Waiting' }
+  ];
+  const html = rows.map(r=>`
+    <div class="o-row${r.now?' now':''}">
+      <span class="n">#${r.n}</span>
+      <span class="who">${r.who}</span>
+      <span class="st"><span class="t-vi">${r.vi}</span><span class="t-en">${r.en}</span></span>
+    </div>`).join('');
+  const a = $('#oList');  if (a) a.innerHTML = html;
+  const b = $('#oList2'); if (b) b.innerHTML = html;
+}
+
+/* ═══ steps 1–3 — ordering: phone picker + staff console ════════════ */
+function setTxt(id, val){ const el = $('#'+id); if (el) el.textContent = val; }
+
+/* phone — package picker */
+function renderOrderCounts(){
+  const d = S.draft, size = SIZES[d.size];
+  $('#pCounts').innerHTML = size.counts.map(o=>`
+    <button class="p-count ${o.c===d.count?'on':''}" onclick="orderCount(this,${o.c},${o.p})">
+      <span class="c">${o.c}</span><span class="p">${vnd(o.p)}</span></button>`).join('');
+}
+function orderSize(size){
+  S.draft.size = size;
+  const cat = SIZES[size];
+  const hit = cat.counts.find(o=>o.c===S.draft.count) || cat.counts[1];
+  S.draft.count = hit.c; S.draft.price = hit.p;
+  $$('[data-osize]').forEach(b=> b.classList.toggle('on', b.dataset.osize===size));
+  renderOrderCounts(); syncPricing();
+}
+function orderCount(el, c, p){
+  S.draft.count = c; S.draft.price = p;
+  $$('#pCounts .p-count').forEach(b=> b.classList.remove('on'));
+  el.classList.add('on'); syncPricing();
+}
+function orderPay(method){
+  S.draft.pay = method;
+  $$('[data-opay]').forEach(b=> b.classList.toggle('on', b.dataset.opay===method));
+  const q = $('#pQrWrap'), c = $('#pCashWrap');
+  if (q) q.hidden = method !== 'qr';
+  if (c) c.hidden = method !== 'cash';
+}
+
+/* staff — manual order */
+function renderStaffCounts(){
+  const d = S.staff, size = SIZES[d.size];
+  $('#sCounts').innerHTML = size.counts.map(o=>`
+    <button class="a-count ${o.c===d.count?'on':''}" onclick="staffCount(this,${o.c},${o.p})">
+      <span class="c">${o.c}</span><span class="p">${vnd(o.p)}</span></button>`).join('');
+}
+function staffSize(size){
+  S.staff.size = size;
+  const cat = SIZES[size];
+  const hit = cat.counts.find(o=>o.c===S.staff.count) || cat.counts[1];
+  S.staff.count = hit.c; S.staff.price = hit.p;
+  $$('[data-ssize]').forEach(b=> b.classList.toggle('on', b.dataset.ssize===size));
+  renderStaffCounts(); syncPricing();
+}
+function staffCount(el, c, p){
+  S.staff.count = c; S.staff.price = p;
+  $$('#sCounts .a-count').forEach(b=> b.classList.remove('on'));
+  el.classList.add('on'); syncPricing();
+}
+function staffPay(method){
+  S.staff.pay = method;
+  const cash = $('#sPayCash'), qr = $('#sPayQR');
+  if (cash) cash.classList.toggle('on', method==='cash');
+  if (qr) qr.classList.toggle('on', method==='qr');
+  syncPricing();
+}
+function staffRecv(amount){
+  S.staff.recv = amount === 0 ? 0 : S.staff.recv + amount;
+  syncPricing();
+}
+
+/* create the order — shared by both routes */
+function orderCreate(source, silent){
+  const d = source === 'staff' ? S.staff : S.draft;
+  S.pkg.size = d.size; S.pkg.count = d.count; S.pkg.price = d.price;
+  S.pkg.label = pkgLabel(d.size, d.count);
+  S.pkg.edits = editsFor(d.count);
+  S.order.type = d.count >= 4 ? '2 × 5×15' : '1 × 10×15';
+  S.order.id = '#ORD-' + S.session;
+  S.order.created = true; S.order.source = source;
+  syncPricing();
+  if (source === 'staff'){
+    $('#sQRimg').innerHTML = qrSVG('poze-session-' + S.session, 25);
+    setTxt('sQRqueue', '#' + S.queue.no);
+    setTxt('sQRorder', S.order.id);
+    setTxt('sQRlink', 'poze.vn/s/' + S.session);
+    $('#sQR').hidden = false;
+    if (!silent) toast('Đã tạo order · cấp QR cho khách');
+  } else {
+    $('#pLinkQr').innerHTML = qrSVG('poze-session-' + S.session, 25);
+    if (!silent){ setPhone('order-link'); toast('Đã tạo order · mở link session'); }
+  }
+}
+function staffCreate(){ orderCreate('staff'); }
+function staffCloseQR(){ $('#sQR').hidden = true; }
+function staffNew(){
+  staffCloseQR();
+  S.staff = { size:'small', count:4, price:130000, pay:'cash', recv:0 };
+  $$('[data-ssize]').forEach(b=> b.classList.toggle('on', b.dataset.ssize==='small'));
+  staffPay('cash'); renderStaffCounts();
+  toast('Đơn mới · sẵn sàng tạo order');
+}
+
+function syncPricing(){
+  // phone — package + payment + session link
+  setTxt('pTotal', vnd(S.draft.price));
+  setTxt('pPayAmount', vnd(S.draft.price));
+  setTxt('pPkgLine', `${pkgLabel(S.draft.size, S.draft.count)} · ${editsFor(S.draft.count)} bản edit`);
+  setTxt('pCashOrder', S.order.id);
+  setTxt('pLinkOrder', S.order.id);
+  const oq = $('#pOrderQr'); if (oq) oq.innerHTML = qrSVG('poze-order-' + S.draft.price, 25);
+  setTxt('pLinkPkg', S.pkg.label);
+  setTxt('pLinkQueue', '#' + S.queue.no);
+  setTxt('pPkg', S.pkg.label);
+  // staff — package + payment
+  setTxt('sPkgLine', pkgLabel(S.staff.size, S.staff.count));
+  setTxt('sTotal', vnd(S.staff.price));
+  setTxt('sRecv', vnd(S.staff.recv));
+  setTxt('sChange', vnd(Math.max(0, S.staff.recv - S.staff.price)));
+  // downstream surfaces
+  setTxt('kEditAllow', S.pkg.edits);
+  setTxt('kEditAllow2', S.pkg.edits);
+  setTxt('pEditCount', `${S.edit.count} / ${S.pkg.edits}`);
+  setTxt('aPrintType', S.order.type);
+  setTxt('pPrintType', S.order.type);
+}
+
+/* ═══ keypad (session code entry) ════════════════════════════════════ */
+function buildKeypad(id, onKey){
+  const host = $(id); if (!host) return;
+  const keys = ['1','2','3','4','5','6','7','8','9','del','0','ok'];
+  host.innerHTML = keys.map(k=>{
+    if (k==='del') return `<button class="act del" data-k="del">⌫</button>`;
+    if (k==='ok')  return `<button class="act ok" data-k="ok">↵</button>`;
+    return `<button data-k="${k}">${k}</button>`;
+  }).join('');
+  host.onclick = e => { const b = e.target.closest('button'); if (b) onKey(b.dataset.k); };
+}
+
+/* ═══ step 6 — session code ══════════════════════════════════════════ */
+function renderCode(){
+  const boxes = $('#codeBoxes');
+  boxes.innerHTML = S.session.split('').map((_,i)=>{
+    const ch = S.code[i];
+    const cls = ch ? 'cb' : 'cb empty';
+    const active = i===S.code.length ? ' active' : '';
+    return `<div class="${cls}${active}">${ch || '·'}</div>`;
+  }).join('');
+}
+function pushCode(k){
+  if (k==='del'){ S.code = S.code.slice(0,-1); renderCode(); return; }
+  if (k==='ok'){ submitSession(); return; }
+  if (S.code.length >= 4) return;
+  S.code += k; renderCode();
+  if (S.code.length===4) setTimeout(submitSession, 350);
+}
+function clearCode(){ S.code=''; renderCode(); }
+function submitSession(){
+  if (S.code === S.session){
+    S.code=''; renderCode();
+    toast('Mã hợp lệ · mở buồng chụp');
+    go(7);
+  } else {
+    toast('Mã sai, thử lại · Wrong code');
+    S.code=''; renderCode();
+  }
+}
+
+/* ═══ step 7 — continuous capture (no per-shot review, no frame pick) ══ */
+function startCapture(){
+  clearInterval(S.capture.timer);
+  S.capture.shots = []; S.capture.index = 0;
+  S.capture.running = true; S.capture.elapsed = 0;
+  S.capture.session = 10;                 // demo: 10s instead of the real x minutes
+  setKiosk('capture');
+  syncCaptureChrome();
+  runCountdown();
+}
+function runCountdown(){
+  clearInterval(S.capture.timer);
+  const shotEvery = 3;                    // demo: one shot every 3s
+  const total = S.capture.total;
+  const session = S.capture.session;
+
+  const paint = () => {
+    const rem = Math.max(0, session - S.capture.elapsed);
+    $('#camTimer').textContent = '0:' + String(rem).padStart(2,'0');
+    const n = shotEvery - (S.capture.elapsed % shotEvery);   // 3 → 2 → 1
+    $('#camNum').textContent = n;
+    $('#camRing').style.strokeDashoffset = (289 * (1 - n/shotEvery)).toFixed(0);
+    $('#camProg').style.width = (S.capture.shots.length / total * 100).toFixed(0) + '%';
+  };
+  paint();
+
+  S.capture.timer = setInterval(() => {
+    S.capture.elapsed++;
+    if (S.capture.elapsed % shotEvery === 0 && S.capture.shots.length < total) takeShot();
+    paint();
+    if (S.capture.shots.length >= total || S.capture.elapsed >= session){
+      clearInterval(S.capture.timer);
+      finishCapture();
+    }
+  }, 1000);
+}
+function takeShot(){
+  if (S.capture.shots.length >= S.capture.total) return;
+  S.capture.shots.push({ seed: 'shot-' + S.capture.index + '-' + Date.now() });
+  S.capture.index = S.capture.shots.length;
+  const f = $('#camFlash');
+  if (f){ f.classList.add('on'); setTimeout(()=>f.classList.remove('on'), 90); }
+  syncCaptureChrome();
+}
+function syncCaptureChrome(){
+  const n = Math.min(S.capture.shots.length + 1, S.capture.total);
+  $('#camShotNo').textContent = n;
+  $('#camShotTot').textContent = S.capture.total;
+  $('#camFootNo').textContent = n;
+  $('#camFootNo2').textContent = n;
+  const dots = $('#camDots');
+  if (dots) dots.innerHTML = Array.from({length:S.capture.total}, (_,i)=>
+    `<i class="${i < S.capture.shots.length ? 'on' : ''}"></i>`).join('');
+}
+function stopCapture(){
+  clearInterval(S.capture.timer);
+  S.capture.running = false;
+  S.capture.shots = []; S.capture.index = 0;
+  toast('Đã dừng ca chụp');
+  go(1);
+}
+function finishCapture(){
+  clearInterval(S.capture.timer);
+  S.capture.running = false;
+  if (S.capture.shots.length === 0){
+    S.capture.shots = [0,1,2].map(i=>({ seed:'demo-'+i }));
+    S.capture.index = S.capture.total;
+  }
+  setKiosk('done');
+  go(8);
+}
+
+/* ═══ frames + collage ═══════════════════════════════════════════════ */
+const FRAMES = [
+  { id:'coastal', name:'Coastal Summer', cap:'Summer Time 2026',    sub:'Coastal love' },
+  { id:'catba',   name:'Cat Ba Blue',    cap:'Summer Cat Ba',        sub:'2026' },
+  { id:'love',    name:'Sending Love',   cap:'Sending All Our Love', sub:'DomikBooth' }
+];
+function renderCollage(host, fi, phone){
+  if (!host) return;
+  const f = FRAMES[fi % FRAMES.length];
+  const count = S.capture.total;
+  const fx = phone ? `filter:${filterCSS()};transform:scale(${S.edit.zoom})` : '';
+  let inner = '';
+  for (let i=0;i<count;i++){
+    const filled = i < S.capture.shots.length;
+    inner += `<div class="slot${filled?'':' empty'}" style="${fx}"></div>`;
+  }
+  host.dataset.frame = f.id;
+  host.innerHTML = inner + `<div class="cap"><small>${f.sub}</small>${f.cap}</div>`;
+}
+
+/* ═══ step 9 — phone edit ════════════════════════════════════════════ */
+const FILTERS = [
+  { name:'Gốc',   css:'none' },
+  { name:'Ấm',    css:'sepia(.35) saturate(1.15) contrast(1.03)' },
+  { name:'Mát',   css:'hue-rotate(-12deg) saturate(1.1) brightness(1.03)' },
+  { name:'Phim',  css:'contrast(1.12) saturate(.85) sepia(.12)' },
+  { name:'Mờ ảo', css:'blur(.6px) brightness(1.06) saturate(1.05)' }
+];
+function filterCSS(){
+  const f = FILTERS[S.edit.filter % FILTERS.length];
+  const beauty = S.edit.beauty ? ' brightness(1.04) saturate(1.06)' : '';
+  return (f.css==='none' ? '' : f.css) + beauty;
+}
+function renderPhoneEdit(){
+  // frames
+  $('#pFrames').innerHTML = FRAMES.map((f,i)=>`
+    <button class="${i===S.edit.frame?'on':''}" onclick="setEditFrame(${i})">
+      <span class="mini" style="background:var(--frame-${f.id}-bg)"><i></i><i></i></span>
+    </button>`).join('');
+  // filters
+  $('#pFilters').innerHTML = FILTERS.map((f,i)=>`
+    <button class="p-chip ${i===S.edit.filter?'on':''}" onclick="setFilter(${i})">${f.name}</button>`).join('');
+  renderCollage($('#pCollage'), S.edit.frame, true);
+  $('#pZoomVal').textContent = S.edit.zoom.toFixed(1) + '×';
+  $('#pEditCount').textContent = `${S.edit.count} / ${S.pkg.edits}`;
+}
+function setEditFrame(i){ S.edit.frame = i; renderPhoneEdit(); }
+function setFilter(i){ S.edit.filter = i; renderPhoneEdit(); }
+function setZoom(v){ S.edit.zoom = +v; renderPhoneEdit(); }
+function toggleBeauty(el){ S.edit.beauty = !S.edit.beauty; el.classList.toggle('on', S.edit.beauty); renderPhoneEdit(); }
+
+/* ═══ step 10 — admin ════════════════════════════════════════════════ */
+const PRINTER_SVG = '<svg width="1.35em" height="1.35em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"><path d="M6 9V3h12v6M6 18H4v-7h16v7h-2M8 14h8v7H8z"/></svg>';
+function resetAdminOrder(){
+  S.order.status = 'wait';
+  $('#aStatus').className = 'a-badge wait';
+  $('#aStatus').innerHTML = '<span class="t-vi">Chờ in</span><span class="t-en">Waiting</span>';
+  $('#aPrintBtn').disabled = false;
+  $('#aPrintBtn').innerHTML = PRINTER_SVG + ' <span class="t-vi">Bấm in</span><span class="t-en">Print</span>';
+  $('#aWait').textContent = '1';
+  $('#aOrderId').textContent = S.order.id;
+  renderCollage($('#aThumb'), S.edit.frame, true);
+}
+function adminPrint(){
+  if (S.order.status === 'done') return;
+  S.order.status = 'done';
+  $('#aStatus').className = 'a-badge print';
+  $('#aStatus').innerHTML = '<span class="t-vi">Đang in…</span><span class="t-en">Printing…</span>';
+  $('#aPrintBtn').disabled = true;
+  toast('Đang in ' + S.order.type);
+  setTimeout(()=>{
+    $('#aStatus').className = 'a-badge done';
+    $('#aStatus').innerHTML = '<span class="t-vi">Đã in</span><span class="t-en">Printed</span>';
+    $('#aPrintBtn').innerHTML = '✓ <span class="t-vi">Đã in xong</span><span class="t-en">Printed</span>';
+    $('#aWait').textContent = '0';
+    $('#aDone').textContent = '29';
+    toast('In xong · khách nhận ảnh tại khay');
+  }, 1600);
+}
+
+/* ═══ step 4/5 — phone queue + send to print ════════════════════════ */
+function sendToPrint(){
+  S.edit.count = Math.min(S.edit.count, S.pkg.edits);
+  setPhone('sent');
+  toast('Đã gửi đơn tới quầy in');
+  S.order.id = '#ORD-' + S.session;
+  $('#pOrderId').textContent = S.order.id;
+}
+
+/* ═══ reset ══════════════════════════════════════════════════════════ */
+function resetAll(){
+  clearInterval(S.capture.timer);
+  S.capture = { shots:[], index:0, total:3, timer:null, running:false, session:10, elapsed:0 };
+  S.edit = { frame:0, filter:0, zoom:1, beauty:true, count:1 };
+  S.draft = { size:'small', count:4, price:130000, pay:'qr' };
+  S.staff = { size:'small', count:4, price:130000, pay:'cash', recv:0 };
+  S.pkg   = { size:'small', count:4, price:130000, label:'Khổ nhỏ 1+1 · 4 ảnh', edits:2 };
+  S.order.created = false; S.order.source = null; S.order.status = 'wait';
+  S.code = '';
+  $('#pBeauty').classList.add('on');
+  $('#sQR').hidden = true;
+  $$('[data-ssize]').forEach(b=> b.classList.toggle('on', b.dataset.ssize==='small'));
+  $$('[data-osize]').forEach(b=> b.classList.toggle('on', b.dataset.osize==='small'));
+  orderPay('qr'); staffPay('cash');
+  renderOrderCounts(); renderStaffCounts();
+  renderCode();
+  syncPricing();
+  go(1);
+}
+
+/* ═══ boot ═══════════════════════════════════════════════════════════ */
+function boot(){
+  buildRail();
+  buildKeypad('#sKeypad', pushCode);
+  $('#pLinkQr').innerHTML = qrSVG('poze-session-' + S.session, 25);
+  $('#qrEdit').innerHTML  = qrSVG('poze-edit-' + S.session, 25);
+  renderOrderCounts();
+  renderStaffCounts();
+  renderCode();
+  renderQueueList();
+  orderPay('qr');
+  staffPay('cash');
+  syncPricing();
+  renderPhoneEdit();
+  resetAdminOrder();
+  go(1);
+}
+boot();
+</script>
+</body>
+</html>
