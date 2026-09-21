@@ -161,17 +161,17 @@ body[data-lang="en"] .t-en{display:inline}
 /* ═══ DEVICE FRAMES ═════════════════════════════════════════════════ */
 .device{position:relative;border-radius:18px;background:var(--bg-ink);
   border:1px solid var(--border);box-shadow:0 26px 60px -30px rgba(0,0,0,.85);overflow:hidden}
-.device--kiosk{container-type:size;aspect-ratio:16/9;width:100%}
+.device--booth{container-type:size;aspect-ratio:16/9;width:100%}
 .device--phone{container-type:size;aspect-ratio:390/844;width:min(390px,86vw);border-radius:44px;
   border:8px solid var(--bg-ink);padding:0}
 .device--admin{container-type:size;aspect-ratio:16/10;width:100%;border-radius:14px}
 
-/* app canvas fills the kiosk */
+/* app canvas fills the booth screen */
 .screen{position:absolute;inset:0;display:none;overflow:hidden;background:var(--bg)}
 .screen.on{display:block}
 .screen::after{content:"";position:absolute;inset:0;background-image:var(--grain);opacity:.05;pointer-events:none}
 
-/* ═══ KIOSK UI ══════════════════════════════════════════════════════ */
+/* ═══ BOOTH SCREEN UI ═══════════════════════════════════════════════ */
 .k-pad{padding:3.2cqw 3.6cqw;height:100%;display:flex;flex-direction:column;position:relative;z-index:1}
 .k-top{display:flex;align-items:center;justify-content:space-between;gap:2cqw;margin-bottom:2.4cqw}
 .k-logo{font-family:var(--font-serif);font-weight:900;color:var(--accent);font-size:3.1cqw;line-height:1}
@@ -225,13 +225,20 @@ body[data-lang="en"] .t-en{display:inline}
   padding:1.3cqw 2cqw;font-family:var(--font-mono);font-size:1.7cqw;letter-spacing:.18em}
 .k-pay .rowlab{font-family:var(--font-round);font-weight:700;font-size:1.6cqw;color:var(--fg);margin-top:1.6cqw}
 .k-pay .note{font-family:var(--font-round);font-size:1.25cqw;color:var(--muted);max-width:26ch}
-.keypad{display:grid;grid-template-columns:repeat(3,1fr);gap:1.1cqw}
-.keypad button{aspect-ratio:1;border-radius:50%;background:var(--surface);color:var(--ink);
-  font-family:var(--font-round);font-weight:700;font-size:2.3cqw;border:2px solid var(--border-ink);transition:.12s ease}
-.keypad button:hover{background:var(--surface-2)}
-.keypad button.act{font-size:1.5cqw}
-.keypad button.del{background:var(--danger);color:var(--surface);border-color:var(--danger)}
-.keypad button.ok{background:var(--ok);color:var(--surface);border-color:var(--ok)}
+/* session-code entry — standard monitor: type on the keyboard, click to confirm */
+.k-input{width:100%;margin-top:1.7cqw;background:var(--surface);color:var(--ink);border:2px solid var(--ink);
+  border-radius:var(--radius);padding:1.1cqw 1.6cqw;font-family:var(--font-mono);font-weight:600;
+  font-size:2.3cqw;letter-spacing:.52em;text-align:center;outline:none;transition:.14s ease}
+.k-input::placeholder{color:var(--border-ink);letter-spacing:.4em}
+.k-input:focus{border-color:var(--accent);box-shadow:0 0 0 .4cqw var(--accent-soft)}
+.k-keyhint{background:color-mix(in oklch,var(--bg-deep) 70%,transparent);border:1px solid var(--border);
+  border-radius:var(--radius);padding:2.2cqw;display:flex;flex-direction:column;align-items:center;gap:1.3cqw}
+.k-keyhint .kk-title{font-family:var(--font-round);font-weight:700;font-size:1.5cqw;color:var(--accent-2);
+  letter-spacing:.06em;display:flex;align-items:center;gap:.6cqw}
+.k-keyhint .kk-keys{display:grid;grid-template-columns:repeat(3,1fr);gap:.9cqw;width:21cqw}
+.k-keyhint .kk-keys span{background:var(--surface);color:var(--ink);border:1px solid var(--border-ink);
+  border-radius:8px;text-align:center;font-family:var(--font-mono);font-weight:600;font-size:1.5cqw;padding:.7cqw 0}
+.k-keyhint .note{text-align:center;font-size:1.2cqw}
 .k-methods{display:grid;grid-template-columns:1fr 1fr;gap:2cqw;margin-top:2cqw}
 
 /* qr block */
@@ -273,7 +280,7 @@ body[data-lang="en"] .t-en{display:inline}
 .cam-count .ring .fg{stroke:var(--info)}
 .cam-count .num{font-family:var(--font-display);font-size:17cqw;color:var(--info);line-height:1;
   text-shadow:0 0 4cqw rgba(0,0,0,.35)}
-.cam-foot{position:absolute;bottom:1.6cqw;left:0;right:0;display:flex;justify-content:center;align-items:center;gap:2cqw;z-index:3}
+.cam-foot{position:absolute;bottom:11cqw;left:0;right:0;display:flex;justify-content:center;align-items:center;gap:2cqw;z-index:3}
 .cam-badge{position:absolute;top:1.4cqw;right:1.4cqw;background:rgba(20,10,10,.6);border-radius:999px;
   padding:.5cqw 1.2cqw;font-family:var(--font-round);font-weight:600;font-size:1.2cqw;display:flex;align-items:center;gap:.6cqw;z-index:3}
 .cam-badge i{width:.9cqw;height:.9cqw;border-radius:50%;background:var(--danger);display:block}
@@ -282,6 +289,23 @@ body[data-lang="en"] .t-en{display:inline}
 .cam-dots{display:flex;gap:1cqw;align-items:center}
 .cam-dots i{width:1.5cqw;height:1.5cqw;border-radius:50%;background:rgba(255,255,255,.32);display:block;transition:.2s ease}
 .cam-dots i.on{background:var(--accent);transform:scale(1.15)}
+
+/* ready-to-shoot overlay + shutter (mouse/keyboard controls, not touch) */
+.cam-ready{position:absolute;inset:0;z-index:6;display:none;place-items:center;
+  background:color-mix(in oklch,var(--bg-ink) 82%,transparent);backdrop-filter:blur(3px)}
+.cam-ready.on{display:grid}
+.cam-ready-card{max-width:46cqw;text-align:center;display:flex;flex-direction:column;align-items:center;gap:1.7cqw}
+.cam-ready-card .k-h1{color:var(--fg)}
+.cam-shutter-wrap{position:absolute;bottom:1.5cqw;left:0;right:0;display:flex;flex-direction:column;
+  align-items:center;gap:.8cqw;z-index:4}
+.cam-shutter{width:8.6cqw;height:8.6cqw;border-radius:50%;background:var(--surface);display:grid;place-items:center;
+  border:.55cqw solid color-mix(in oklch,var(--surface) 42%,var(--bg-ink));transition:.12s ease}
+.cam-shutter span{width:5.7cqw;height:5.7cqw;border-radius:50%;background:var(--danger);display:block;transition:.12s ease}
+.cam-shutter:hover span{transform:scale(.93)}
+.cam-shutter:active span{transform:scale(.84)}
+.cam-shutter[disabled]{opacity:.35;cursor:not-allowed}
+.cam-shutter-lab{font-family:var(--font-round);font-weight:700;font-size:1.25cqw;color:var(--fg);
+  background:rgba(20,10,10,.62);padding:.4cqw 1.2cqw;border-radius:999px}
 
 /* review */
 .k-review{display:grid;grid-template-columns:1.5fr 1fr;gap:2.2cqw;flex:1;min-height:0}
@@ -489,16 +513,16 @@ body[data-lang="en"] .t-en{display:inline}
 
     <div class="surfaces" id="surfaces">
 
-      <!-- ═══ KIOSK ═══ -->
-      <div class="surface-wrap grow" data-device="kiosk" data-od-id="surface-kiosk">
-        <div class="surface-note">Kiosk · 1920 × 1080 · <span class="t-vi">màn hình chạm</span><span class="t-en">touchscreen</span></div>
-        <div class="device device--kiosk">
+      <!-- ═══ BOOTH SCREEN ═══ -->
+      <div class="surface-wrap grow" data-device="booth" data-od-id="surface-booth">
+        <div class="surface-note">Buồng chụp · 1920 × 1080 · <span class="t-vi">màn hình thường · chuột &amp; bàn phím</span><span class="t-en">standard monitor · mouse &amp; keyboard</span></div>
+        <div class="device device--booth">
 
           <!-- session entry -->
           <section class="screen" data-kscreen="session">
             <div class="k-pad">
               <div class="k-top">
-                <div><div class="k-eyebrow">Step 06 · Kiosk</div>
+                <div><div class="k-eyebrow">Step 06 · Màn hình buồng chụp</div>
                   <div class="k-h1">Nhập mã phiên chụp</div>
                   <div class="k-sub">Enter session code · mã hiển thị trên điện thoại của bạn</div></div>
                 <span class="k-logo">PÓZE</span>
@@ -506,16 +530,29 @@ body[data-lang="en"] .t-en{display:inline}
               <div class="k-pay" style="align-items:center">
                 <div>
                   <div class="code-boxes" id="codeBoxes"></div>
-                  <p class="note" style="margin-top:1.8cqw;font-size:1.5cqw">
-                    <span class="t-vi">Mã phiên gồm 4 chữ số. Nhập sai 3 lần sẽ quay lại hàng đợi.</span>
-                    <span class="t-en">The session code has 4 digits. Three wrong tries sends you back to the queue.</span>
+                  <input class="k-input" id="codeInput" type="text" inputmode="numeric" autocomplete="off"
+                         maxlength="4" placeholder="····" aria-label="Mã phiên chụp / Session code"
+                         oninput="onCodeInput(this.value)"
+                         onkeydown="if(event.key==='Enter'){event.preventDefault();submitSession();}">
+                  <p class="note" style="margin-top:1.6cqw;font-size:1.45cqw">
+                    <span class="t-vi">Gõ 4 chữ số bằng bàn phím rồi bấm Xác nhận (hoặc nhấn Enter). Nhập sai 3 lần sẽ quay lại hàng đợi.</span>
+                    <span class="t-en">Type the 4 digits on the keyboard, then click Confirm (or press Enter). Three wrong tries sends you back to the queue.</span>
                   </p>
                   <div class="k-foot" style="justify-content:flex-start">
                     <button class="pill gold k-lg" onclick="submitSession()"><span class="t-vi">Xác nhận</span><span class="t-en">Confirm</span> →</button>
                     <button class="pill ghost k" onclick="clearCode()"><span class="t-vi">Xóa</span><span class="t-en">Clear</span></button>
                   </div>
                 </div>
-                <div class="keypad" id="sKeypad"></div>
+                <div class="k-keyhint">
+                  <div class="kk-title">⌨ <span class="t-vi">Bàn phím máy tính</span><span class="t-en">Computer keyboard</span></div>
+                  <div class="kk-keys">
+                    <span>1</span><span>2</span><span>3</span>
+                    <span>4</span><span>5</span><span>6</span>
+                    <span>7</span><span>8</span><span>9</span>
+                    <span>⌫</span><span>0</span><span>↵</span>
+                  </div>
+                  <p class="note"><span class="t-vi">Enter ↵ để xác nhận</span><span class="t-en">Enter ↵ to confirm</span></p>
+                </div>
               </div>
             </div>
           </section>
@@ -526,6 +563,20 @@ body[data-lang="en"] .t-en{display:inline}
               <div class="cam-strip l"></div><div class="cam-strip r"></div>
               <div class="cam-main"></div><div class="cam-vig"></div>
               <div class="cam-flash" id="camFlash"></div>
+
+              <!-- ready state: the operator starts the session with the mouse -->
+              <div class="cam-ready on" id="camReady">
+                <div class="cam-ready-card">
+                  <div class="k-eyebrow">Step 07 · <span class="t-vi">Màn hình buồng chụp</span><span class="t-en">Booth screen</span></div>
+                  <div class="k-h1"><span class="t-vi">Sẵn sàng chụp</span><span class="t-en">Ready to shoot</span></div>
+                  <p class="note" style="font-size:1.45cqw;max-width:40ch">
+                    <span class="t-vi">Đứng vào khung rồi bấm <b>Bắt đầu chụp</b>. Mỗi tấm đếm ngược 3 giây và tự chụp — hoặc bấm nút <b>Chụp</b> để chụp ngay.</span>
+                    <span class="t-en">Step into the frame, then click <b>Start capture</b>. Each shot counts down 3 seconds and fires on its own — or click the <b>shutter</b> to fire now.</span>
+                  </p>
+                  <button class="pill gold k-lg" onclick="beginSession()"><span class="t-vi">Bắt đầu chụp</span><span class="t-en">Start capture</span> →</button>
+                </div>
+              </div>
+
               <div class="cam-bar">
                 <button class="pill danger" style="font-size:1.3cqw;padding:.8cqw 1.8cqw" onclick="stopCapture()">✕ END</button>
                 <div class="spacer"></div>
@@ -547,6 +598,10 @@ body[data-lang="en"] .t-en{display:inline}
                   <span class="t-en">Shot <span class="mono" id="camFootNo2">1</span> / <span class="mono">3</span> · look at the lens!</span>
                 </div>
                 <div class="cam-dots" id="camDots"></div>
+              </div>
+              <div class="cam-shutter-wrap">
+                <button class="cam-shutter" id="camShutter" onclick="shutter()" aria-label="Chụp / Shutter"><span></span></button>
+                <div class="cam-shutter-lab"><span class="t-vi">Bấm chụp</span><span class="t-en">Click to shoot</span></div>
               </div>
             </div>
           </section>
@@ -779,7 +834,7 @@ body[data-lang="en"] .t-en{display:inline}
             <div class="p-body">
               <div class="p-label" style="color:var(--ok)">● <span class="t-vi">Đến lượt bạn</span><span class="t-en">It's your turn</span></div>
               <div class="p-h" style="margin-top:1.4cqw">Mã phiên chụp</div>
-              <div class="p-sub">Enter this code at the kiosk</div>
+              <div class="p-sub">Enter this code on the screen inside the booth</div>
               <div class="p-card" style="text-align:center;border-color:var(--accent)">
                 <div class="p-code" id="pCode">4 8 2 1</div>
                 <div class="p-label" style="margin-top:2cqw"><span class="t-vi">Có hiệu lực trong</span><span class="t-en">Valid for</span> <span class="mono" id="pCodeTtl">02:00</span></div>
@@ -934,7 +989,7 @@ body[data-lang="en"] .t-en{display:inline}
 </div>
 
 <footer class="pagefoot" data-od-id="footer">
-  <span>© 2026 PÓZE Selfbooth · Mộc / Ban Công</span>
+  <span>© 2026 PÓZE Selfbooth · Mộc</span>
   <span class="mono">Prototype · <span class="t-vi">demo 10s mỗi ca chụp liên tiếp</span><span class="t-en">10s demo per continuous session</span> · VI/EN</span>
 </footer>
 
@@ -953,7 +1008,7 @@ const S = {
   queue: { no:12, ahead:3 },
   session: '4821',
   code: '',
-  capture: { shots:[], index:0, total:3, timer:null, running:false, session:10, elapsed:0 },
+  capture: { shots:[], index:0, total:3, timer:null, running:false, started:false, session:10, elapsed:0, cycle:0 },
   edit: { frame:0, filter:0, zoom:1, beauty:true, count:1 },
   order: { id:'#ORD-4821', type:'2 × 5×15', status:'wait' }
 };
@@ -971,10 +1026,10 @@ const STEPS = [
   { vi:'Thanh toán', en:'Payment', dev:['phone','staff'], ps:'order-pay', desc:{vi:'Khách trả bằng QR/ví điện tử hoặc tiền mặt ngay trên điện thoại — hoặc trả trực tiếp cho nhân viên tại quầy.',en:'The guest pays by QR/e-wallet or cash on their phone — or pays the staff directly at the counter.'} },
   { vi:'Tạo order → link session / QR', en:'Order → session link / QR', dev:['phone','staff'], ps:'order-link', desc:{vi:'Order được tạo: khách nhận link session trên điện thoại. Nếu nhân viên tạo thì quầy hiện mã QR để khách quét vào session.',en:'Once created, the guest gets a session link on their phone. If staff created it, the counter shows a QR for the guest to scan into the session.'} },
   { vi:'Vào session — số hàng đợi', en:'Enter session — queue number', dev:['phone'], ps:'queue', desc:{vi:'Khách mở link session trên điện thoại và thấy số hàng đợi cùng thời gian chờ dự kiến.',en:'The guest opens the session link on their phone and sees the queue number and estimated wait.'} },
-  { vi:'Đến lượt — mã phiên chụp', en:'Your turn — session code', dev:['phone'], ps:'turn', desc:{vi:'Khi tới lượt, mã phiên 4 số hiện trên điện thoại của khách để mang sang kiosk.',en:'At their turn the 4-digit session code appears on the guest’s phone to carry over to the kiosk.'} },
-  { vi:'Nhập mã phiên ở kiosk', en:'Enter session code', dev:['kiosk'], ks:'session', desc:{vi:'Khách nhập mã phiên trên kiosk để mở buồng chụp.',en:'The guest types the session code on the kiosk to unlock the booth.'} },
-  { vi:'Chụp liên tiếp (countdown)', en:'Continuous capture (countdown)', dev:['kiosk'], ks:'capture', desc:{vi:'Buồng chụp tự động chụp liên tiếp, có countdown ngắn giữa các tấm (demo 10 giây). Không có màn review từng ảnh và không chọn frame ở kiosk — khách chọn khung khi chỉnh ảnh trên điện thoại.',en:'The booth fires shots back-to-back with a short countdown between them (10-second demo). There is no per-shot review and no frame pick at the kiosk — framing happens later in the phone editor.'} },
-  { vi:'Hoàn tất — QR sang link edit', en:'Done — QR to edit', dev:['kiosk'], ks:'done', desc:{vi:'Kiosk hiện mã QR mở link edit trên điện thoại. Số bản edit phụ thuộc gói chụp.',en:'The kiosk shows a QR that opens the phone edit link. Edit count depends on the package.'} },
+  { vi:'Đến lượt — mã phiên chụp', en:'Your turn — session code', dev:['phone'], ps:'turn', desc:{vi:'Khi tới lượt, mã phiên 4 số hiện trên điện thoại của khách để mang sang buồng chụp.',en:'At their turn the 4-digit session code appears on the guest’s phone to carry over to the booth.'} },
+  { vi:'Nhập mã phiên trong buồng chụp', en:'Enter session code', dev:['booth'], ks:'session', desc:{vi:'Màn hình buồng chụp là màn hình thường, thao tác bằng chuột và bàn phím: khách gõ mã phiên 4 số rồi bấm nút Xác nhận để bắt đầu ca chụp.',en:'The booth screen is a standard monitor driven by mouse and keyboard: the guest types the 4-digit session code and clicks Confirm to start the session.'} },
+  { vi:'Chụp liên tiếp (countdown)', en:'Continuous capture (countdown)', dev:['booth'], ks:'capture', desc:{vi:'Bấm nút Bắt đầu chụp để mở ca. Mỗi tấm đếm ngược 3 giây rồi tự chụp, hoặc bấm nút Chụp để chụp ngay (demo 10 giây). Không có màn review từng ảnh và không chọn frame trên màn hình buồng chụp — khách chọn khung khi chỉnh ảnh trên điện thoại.',en:'Click Start capture to begin. Each shot counts down 3 seconds and fires on its own, or click the shutter to fire immediately (10-second demo). There is no per-shot review and no frame pick on the booth screen — framing happens later in the phone editor.'} },
+  { vi:'Hoàn tất — QR sang link edit', en:'Done — QR to edit', dev:['booth'], ks:'done', desc:{vi:'Màn hình buồng chụp hiện mã QR mở link edit trên điện thoại. Số bản edit phụ thuộc gói chụp.',en:'The booth screen shows a QR that opens the phone edit link. Edit count depends on the package.'} },
   { vi:'Edit trên điện thoại', en:'Edit on phone', dev:['phone'], ps:'edit', desc:{vi:'Ghép ảnh vào frame, filter, làm đẹp, zoom — rồi gửi in.',en:'Compose into the frame, filter, beautify, zoom — then send to print.'} },
   { vi:'Admin bấm in', en:'Admin prints', dev:['admin'], desc:{vi:'Đơn hiện ở quầy in; nhân viên bấm In và khách nhận ảnh tại khay.',en:'The order lands at the print desk; staff hit Print and the guest collects at the tray.'} }
 ];
@@ -1040,11 +1095,11 @@ function renderStep(){
   });
   // device visibility
   $$('[data-device]').forEach(w=> w.hidden = !s.dev.includes(w.dataset.device));
-  if (s.ks) setKiosk(s.ks);
+  if (s.ks) setBooth(s.ks);
   if (s.ps) setPhone(s.ps);
 }
 
-/* overview shown before the user enters any step — starts on the phone, never the kiosk */
+/* overview shown before the user enters any step — starts on the phone, never the booth screen */
 function renderIntro(){
   const lang = document.body.dataset.lang;
   $('#stepIdx').innerHTML = '<span class="t-vi">Tổng quan</span><span class="t-en">Overview</span>';
@@ -1076,8 +1131,8 @@ function go(n){
   renderStep();
 }
 
-function setKiosk(name){
-  S.kioskScreen = name;
+function setBooth(name){
+  S.boothScreen = name;
   $$('[data-kscreen]').forEach(el=> el.classList.toggle('on', el.dataset.kscreen===name));
 }
 function setPhone(name){
@@ -1203,21 +1258,9 @@ function syncPricing(){
   setTxt('pPrintType', S.order.type);
 }
 
-/* ═══ keypad (session code entry) ════════════════════════════════════ */
-function buildKeypad(id, onKey){
-  const host = $(id); if (!host) return;
-  const keys = ['1','2','3','4','5','6','7','8','9','del','0','ok'];
-  host.innerHTML = keys.map(k=>{
-    if (k==='del') return `<button class="act del" data-k="del">⌫</button>`;
-    if (k==='ok')  return `<button class="act ok" data-k="ok">↵</button>`;
-    return `<button data-k="${k}">${k}</button>`;
-  }).join('');
-  host.onclick = e => { const b = e.target.closest('button'); if (b) onKey(b.dataset.k); };
-}
-
-/* ═══ step 6 — session code ══════════════════════════════════════════ */
+/* ═══ step 6 — session code, typed on a physical keyboard ════════════ */
 function renderCode(){
-  const boxes = $('#codeBoxes');
+  const boxes = $('#codeBoxes'); if (!boxes) return;
   boxes.innerHTML = S.session.split('').map((_,i)=>{
     const ch = S.code[i];
     const cls = ch ? 'cb' : 'cb empty';
@@ -1225,32 +1268,47 @@ function renderCode(){
     return `<div class="${cls}${active}">${ch || '·'}</div>`;
   }).join('');
 }
-function pushCode(k){
-  if (k==='del'){ S.code = S.code.slice(0,-1); renderCode(); return; }
-  if (k==='ok'){ submitSession(); return; }
-  if (S.code.length >= 4) return;
-  S.code += k; renderCode();
-  if (S.code.length===4) setTimeout(submitSession, 350);
+function onCodeInput(v){
+  S.code = (v || '').replace(/\D/g,'').slice(0,4);
+  const inp = $('#codeInput'); if (inp && inp.value !== S.code) inp.value = S.code;
+  renderCode();
+  if (S.code.length === 4) setTimeout(submitSession, 400);
 }
-function clearCode(){ S.code=''; renderCode(); }
+function clearCode(){
+  S.code = '';
+  const inp = $('#codeInput'); if (inp) inp.value = '';
+  renderCode();
+}
 function submitSession(){
   if (S.code === S.session){
-    S.code=''; renderCode();
+    clearCode();
     toast('Mã hợp lệ · mở buồng chụp');
     go(7);
   } else {
     toast('Mã sai, thử lại · Wrong code');
-    S.code=''; renderCode();
+    clearCode();
   }
 }
 
-/* ═══ step 7 — continuous capture (no per-shot review, no frame pick) ══ */
+/* ═══ step 7 — capture on a standard monitor (mouse + keyboard) ═══════
+   No per-shot review, no frame pick. Start → countdown auto-fires each
+   shot, and the on-screen shutter fires one immediately.            */
 function startCapture(){
   clearInterval(S.capture.timer);
   S.capture.shots = []; S.capture.index = 0;
-  S.capture.running = true; S.capture.elapsed = 0;
+  S.capture.running = false; S.capture.started = false;
+  S.capture.elapsed = 0; S.capture.cycle = 0;
   S.capture.session = 10;                 // demo: 10s instead of the real x minutes
-  setKiosk('capture');
+  setBooth('capture');
+  const ready = $('#camReady'); if (ready) ready.classList.add('on');
+  const sh = $('#camShutter'); if (sh) sh.disabled = true;
+  syncCaptureChrome();
+}
+function beginSession(){
+  const ready = $('#camReady'); if (ready) ready.classList.remove('on');
+  const sh = $('#camShutter'); if (sh) sh.disabled = false;
+  S.capture.running = true; S.capture.started = true;
+  S.capture.elapsed = 0; S.capture.cycle = 0;
   syncCaptureChrome();
   runCountdown();
 }
@@ -1263,7 +1321,7 @@ function runCountdown(){
   const paint = () => {
     const rem = Math.max(0, session - S.capture.elapsed);
     $('#camTimer').textContent = '0:' + String(rem).padStart(2,'0');
-    const n = shotEvery - (S.capture.elapsed % shotEvery);   // 3 → 2 → 1
+    const n = Math.max(1, shotEvery - S.capture.cycle);      // 3 → 2 → 1
     $('#camNum').textContent = n;
     $('#camRing').style.strokeDashoffset = (289 * (1 - n/shotEvery)).toFixed(0);
     $('#camProg').style.width = (S.capture.shots.length / total * 100).toFixed(0) + '%';
@@ -1271,8 +1329,9 @@ function runCountdown(){
   paint();
 
   S.capture.timer = setInterval(() => {
-    S.capture.elapsed++;
-    if (S.capture.elapsed % shotEvery === 0 && S.capture.shots.length < total) takeShot();
+    if (!S.capture.running) return;
+    S.capture.elapsed++; S.capture.cycle++;
+    if (S.capture.cycle >= shotEvery && S.capture.shots.length < total) takeShot();
     paint();
     if (S.capture.shots.length >= total || S.capture.elapsed >= session){
       clearInterval(S.capture.timer);
@@ -1284,9 +1343,19 @@ function takeShot(){
   if (S.capture.shots.length >= S.capture.total) return;
   S.capture.shots.push({ seed: 'shot-' + S.capture.index + '-' + Date.now() });
   S.capture.index = S.capture.shots.length;
+  S.capture.cycle = 0;                    // restart the 3s countdown
   const f = $('#camFlash');
   if (f){ f.classList.add('on'); setTimeout(()=>f.classList.remove('on'), 90); }
   syncCaptureChrome();
+}
+/* shutter button — fire one shot now with the mouse */
+function shutter(){
+  if (!S.capture.running || S.capture.shots.length >= S.capture.total) return;
+  takeShot();
+  if (S.capture.shots.length >= S.capture.total){
+    clearInterval(S.capture.timer);
+    finishCapture();
+  }
 }
 function syncCaptureChrome(){
   const n = Math.min(S.capture.shots.length + 1, S.capture.total);
@@ -1300,19 +1369,21 @@ function syncCaptureChrome(){
 }
 function stopCapture(){
   clearInterval(S.capture.timer);
-  S.capture.running = false;
-  S.capture.shots = []; S.capture.index = 0;
+  S.capture.running = false; S.capture.started = false;
+  S.capture.shots = []; S.capture.index = 0; S.capture.cycle = 0;
+  const ready = $('#camReady'); if (ready) ready.classList.remove('on');
   toast('Đã dừng ca chụp');
   go(0);
 }
 function finishCapture(){
   clearInterval(S.capture.timer);
-  S.capture.running = false;
+  S.capture.running = false; S.capture.started = false;
+  const ready = $('#camReady'); if (ready) ready.classList.remove('on');
   if (S.capture.shots.length === 0){
     S.capture.shots = [0,1,2].map(i=>({ seed:'demo-'+i }));
     S.capture.index = S.capture.total;
   }
-  setKiosk('done');
+  setBooth('done');
   go(8);
 }
 
@@ -1408,7 +1479,7 @@ function sendToPrint(){
 /* ═══ reset — back to the pristine overview state ═══════════════════ */
 function resetAll(){
   clearInterval(S.capture.timer);
-  S.capture = { shots:[], index:0, total:3, timer:null, running:false, session:10, elapsed:0 };
+  S.capture = { shots:[], index:0, total:3, timer:null, running:false, started:false, session:10, elapsed:0, cycle:0 };
   S.edit = { frame:0, filter:0, zoom:1, beauty:true, count:1 };
   S.draft = { size:'small', count:4, price:130000, pay:'qr' };
   S.staff = { size:'small', count:4, price:130000, pay:'cash', recv:0 };
@@ -1417,7 +1488,10 @@ function resetAll(){
   S.queue = { no:12, ahead:3 };
   S.order = { id:'#ORD-' + S.session, type:'2 × 5×15', status:'wait', created:false, source:null };
   S.code = '';
-  S.kioskScreen = 'session';
+  S.boothScreen = 'session';
+  const ci = $('#codeInput'); if (ci) ci.value = '';
+  const cr = $('#camReady'); if (cr) cr.classList.add('on');
+  const cs = $('#camShutter'); if (cs) cs.disabled = true;
   $('#pBeauty').classList.add('on');
   $('#sQR').hidden = true;
   $$('[data-ssize]').forEach(b=> b.classList.toggle('on', b.dataset.ssize==='small'));
@@ -1435,7 +1509,6 @@ function resetAll(){
 /* ═══ boot ═══════════════════════════════════════════════════════════ */
 function boot(){
   buildRail();
-  buildKeypad('#sKeypad', pushCode);
   $('#pLinkQr').innerHTML = qrSVG('poze-session-' + S.session, 25);
   $('#qrEdit').innerHTML  = qrSVG('poze-edit-' + S.session, 25);
   renderOrderCounts();
