@@ -92,6 +92,16 @@ body[data-lang="en"] .t-en{display:inline}
 .lang{display:flex;border:1px solid var(--border);border-radius:999px;overflow:hidden;flex:none}
 .lang button{padding:6px 14px;font-family:var(--font-round);font-weight:700;font-size:12.5px;color:var(--muted);letter-spacing:.04em}
 .lang button.on{background:var(--accent);color:var(--ink)}
+.top-actions{display:flex;align-items:center;gap:10px;flex:none}
+.reset-btn{
+  display:inline-flex;align-items:center;gap:7px;
+  padding:7px 15px;border-radius:999px;border:1px solid var(--border);
+  font-family:var(--font-round);font-weight:700;font-size:12.5px;letter-spacing:.02em;
+  color:var(--fg);background:transparent;transition:.15s ease;
+}
+.reset-btn:hover{background:var(--cream-soft);border-color:var(--accent);color:var(--accent-2)}
+.reset-btn:active{transform:scale(.97)}
+@media (max-width:520px){ .reset-btn .t-vi,.reset-btn .t-en{display:none} }
 
 .shell{position:relative;z-index:1;max-width:1440px;margin-inline:auto;padding:28px 24px 64px;
   display:grid;grid-template-columns:288px minmax(0,1fr);gap:32px;align-items:start}
@@ -444,9 +454,15 @@ body[data-lang="en"] .t-en{display:inline}
       <span class="div"></span>
       <span class="sub">Selfbooth · <span class="t-vi">Luồng dịch vụ đầu–cuối</span><span class="t-en">End-to-end service flow</span></span>
     </div>
-    <div class="lang" role="group" aria-label="Ngôn ngữ / Language">
-      <button id="lang-vi" class="on" onclick="setLang('vi')">VI</button>
-      <button id="lang-en" onclick="setLang('en')">EN</button>
+    <div class="top-actions">
+      <button class="reset-btn" onclick="resetAll()" title="Về trạng thái ban đầu / Reset to start">
+        <span aria-hidden="true">↺</span>
+        <span class="t-vi">Bắt đầu lại</span><span class="t-en">Start over</span>
+      </button>
+      <div class="lang" role="group" aria-label="Ngôn ngữ / Language">
+        <button id="lang-vi" class="on" onclick="setLang('vi')">VI</button>
+        <button id="lang-en" onclick="setLang('en')">EN</button>
+      </div>
     </div>
   </div>
 </header>
@@ -1389,7 +1405,7 @@ function sendToPrint(){
   $('#pOrderId').textContent = S.order.id;
 }
 
-/* ═══ reset ══════════════════════════════════════════════════════════ */
+/* ═══ reset — back to the pristine overview state ═══════════════════ */
 function resetAll(){
   clearInterval(S.capture.timer);
   S.capture = { shots:[], index:0, total:3, timer:null, running:false, session:10, elapsed:0 };
@@ -1397,8 +1413,11 @@ function resetAll(){
   S.draft = { size:'small', count:4, price:130000, pay:'qr' };
   S.staff = { size:'small', count:4, price:130000, pay:'cash', recv:0 };
   S.pkg   = { size:'small', count:4, price:130000, label:'Khổ nhỏ 1+1 · 4 ảnh', edits:2 };
-  S.order.created = false; S.order.source = null; S.order.status = 'wait';
+  S.pay   = { method:null, cash:0, paid:false };
+  S.queue = { no:12, ahead:3 };
+  S.order = { id:'#ORD-' + S.session, type:'2 × 5×15', status:'wait', created:false, source:null };
   S.code = '';
+  S.kioskScreen = 'session';
   $('#pBeauty').classList.add('on');
   $('#sQR').hidden = true;
   $$('[data-ssize]').forEach(b=> b.classList.toggle('on', b.dataset.ssize==='small'));
@@ -1406,8 +1425,11 @@ function resetAll(){
   orderPay('qr'); staffPay('cash');
   renderOrderCounts(); renderStaffCounts();
   renderCode();
+  renderPhoneEdit();
   syncPricing();
+  resetAdminOrder();
   go(0);
+  toast('Đã quay về trạng thái ban đầu');
 }
 
 /* ═══ boot ═══════════════════════════════════════════════════════════ */
