@@ -92,6 +92,16 @@ body[data-lang="en"] .t-en{display:inline}
 .lang{display:flex;border:1px solid var(--border);border-radius:999px;overflow:hidden;flex:none}
 .lang button{padding:6px 14px;font-family:var(--font-round);font-weight:700;font-size:12.5px;color:var(--muted);letter-spacing:.04em}
 .lang button.on{background:var(--accent);color:var(--ink)}
+.top-actions{display:flex;align-items:center;gap:10px;flex:none}
+.reset-btn{
+  display:inline-flex;align-items:center;gap:7px;
+  padding:7px 15px;border-radius:999px;border:1px solid var(--border);
+  font-family:var(--font-round);font-weight:700;font-size:12.5px;letter-spacing:.02em;
+  color:var(--fg);background:transparent;transition:.15s ease;
+}
+.reset-btn:hover{background:var(--cream-soft);border-color:var(--accent);color:var(--accent-2)}
+.reset-btn:active{transform:scale(.97)}
+@media (max-width:520px){ .reset-btn .t-vi,.reset-btn .t-en{display:none} }
 
 .shell{position:relative;z-index:1;max-width:1440px;margin-inline:auto;padding:28px 24px 64px;
   display:grid;grid-template-columns:288px minmax(0,1fr);gap:32px;align-items:start}
@@ -152,12 +162,11 @@ body[data-lang="en"] .t-en{display:inline}
 .device{position:relative;border-radius:18px;background:var(--bg-ink);
   border:1px solid var(--border);box-shadow:0 26px 60px -30px rgba(0,0,0,.85);overflow:hidden}
 .device--kiosk{container-type:size;aspect-ratio:16/9;width:100%}
-.device--overhead{container-type:size;aspect-ratio:16/9;width:100%;border-radius:14px}
 .device--phone{container-type:size;aspect-ratio:390/844;width:min(390px,86vw);border-radius:44px;
   border:8px solid var(--bg-ink);padding:0}
 .device--admin{container-type:size;aspect-ratio:16/10;width:100%;border-radius:14px}
 
-/* app canvas fills the kiosk / overhead */
+/* app canvas fills the kiosk */
 .screen{position:absolute;inset:0;display:none;overflow:hidden;background:var(--bg)}
 .screen.on{display:block}
 .screen::after{content:"";position:absolute;inset:0;background-image:var(--grain);opacity:.05;pointer-events:none}
@@ -343,25 +352,6 @@ body[data-lang="en"] .t-en{display:inline}
 .switch.on{background:var(--ok)}
 .switch.on i{left:6.3cqw}
 
-/* ═══ OVERHEAD / QUEUE DISPLAY ══════════════════════════════════════ */
-.o-pad{position:absolute;inset:0;padding:3cqw 3.6cqw;display:flex;flex-direction:column;z-index:1}
-.o-grid{display:grid;grid-template-columns:1.25fr 1fr;gap:3cqw;flex:1;min-height:0}
-.o-now{background:color-mix(in oklch,var(--bg-deep) 60%,transparent);border:2px solid var(--accent);
-  border-radius:var(--radius-lg);padding:2.6cqw;display:flex;flex-direction:column;justify-content:center;gap:1.2cqw}
-.o-now .lab{font-family:var(--font-mono);font-size:1.2cqw;letter-spacing:.24em;text-transform:uppercase;color:var(--accent-2)}
-.o-now .no{font-family:var(--font-display);font-weight:400;font-size:12cqw;line-height:.9;color:var(--fg)}
-.o-now .code{font-family:var(--font-mono);font-weight:600;font-size:3.2cqw;letter-spacing:.16em;color:var(--accent)}
-.o-list{display:flex;flex-direction:column;gap:1.2cqw;min-height:0}
-.o-row{display:grid;grid-template-columns:auto 1fr auto;gap:1.6cqw;align-items:center;
-  background:color-mix(in oklch,var(--bg-deep) 45%,transparent);border:1px solid var(--border);
-  border-radius:var(--radius);padding:1.4cqw 1.8cqw}
-.o-row .n{font-family:var(--font-mono);font-weight:600;font-size:2.6cqw;color:var(--accent)}
-.o-row .who{font-family:var(--font-round);font-weight:600;font-size:1.6cqw;color:var(--fg)}
-.o-row .st{font-family:var(--font-mono);font-size:1.1cqw;letter-spacing:.1em;text-transform:uppercase;
-  padding:.35cqw 1cqw;border-radius:999px;background:var(--cream-soft);color:var(--muted)}
-.o-row.now{border-color:var(--accent)}
-.o-row.now .st{background:var(--ok);color:var(--surface)}
-
 /* ═══ ADMIN ═════════════════════════════════════════════════════════ */
 .a-shell{position:absolute;inset:0;display:grid;grid-template-columns:22cqw 1fr;background:var(--bg-deep);z-index:1}
 .a-side{background:var(--bg-ink);border-right:1px solid var(--border);padding:2.4cqw 1.8cqw;display:flex;flex-direction:column;gap:1.2cqw}
@@ -464,9 +454,15 @@ body[data-lang="en"] .t-en{display:inline}
       <span class="div"></span>
       <span class="sub">Selfbooth · <span class="t-vi">Luồng dịch vụ đầu–cuối</span><span class="t-en">End-to-end service flow</span></span>
     </div>
-    <div class="lang" role="group" aria-label="Ngôn ngữ / Language">
-      <button id="lang-vi" class="on" onclick="setLang('vi')">VI</button>
-      <button id="lang-en" onclick="setLang('en')">EN</button>
+    <div class="top-actions">
+      <button class="reset-btn" onclick="resetAll()" title="Về trạng thái ban đầu / Reset to start">
+        <span aria-hidden="true">↺</span>
+        <span class="t-vi">Bắt đầu lại</span><span class="t-en">Start over</span>
+      </button>
+      <div class="lang" role="group" aria-label="Ngôn ngữ / Language">
+        <button id="lang-vi" class="on" onclick="setLang('vi')">VI</button>
+        <button id="lang-en" onclick="setLang('en')">EN</button>
+      </div>
     </div>
   </div>
 </header>
@@ -481,8 +477,8 @@ body[data-lang="en"] .t-en{display:inline}
   <main class="stage" data-od-id="stage">
     <div class="stage-head">
       <div>
-        <div class="idx" id="stepIdx">STEP 01 / 10</div>
-        <h1 id="stepTitle">Bảng giá &amp; gói chụp</h1>
+        <div class="idx" id="stepIdx">Tổng quan</div>
+        <h1 id="stepTitle">Luồng dịch vụ Selfbooth</h1>
         <p id="stepDesc"></p>
       </div>
       <div class="navbtns">
@@ -497,44 +493,6 @@ body[data-lang="en"] .t-en{display:inline}
       <div class="surface-wrap grow" data-device="kiosk" data-od-id="surface-kiosk">
         <div class="surface-note">Kiosk · 1920 × 1080 · <span class="t-vi">màn hình chạm</span><span class="t-en">touchscreen</span></div>
         <div class="device device--kiosk">
-
-          <!-- price board — display only; ordering happens on phone or with staff -->
-          <section class="screen" data-kscreen="priceboard">
-            <div class="k-pad">
-              <div class="k-top">
-                <div><div class="k-eyebrow">Step 01 · Pricing</div>
-                  <div class="k-h1">Bảng giá chụp</div>
-                  <div class="k-sub">Chọn gói trên điện thoại hoặc tại quầy với nhân viên</div></div>
-                <span class="k-logo">PÓZE</span>
-              </div>
-              <div class="k-cols">
-                <div class="k-group">
-                  <h3>Khổ nhỏ 1+1</h3>
-                  <div class="en">Small size 1+1 · 3–4 cut</div>
-                  <div class="k-counts">
-                    <div class="k-count"><span class="c">2</span><span class="p">80.000đ</span></div>
-                    <div class="k-count"><span class="c">4</span><span class="p">130.000đ</span></div>
-                    <div class="k-count"><span class="c">6</span><span class="p">180.000đ</span></div>
-                    <div class="k-count"><span class="c">8</span><span class="p">230.000đ</span></div>
-                  </div>
-                </div>
-                <div class="k-group">
-                  <h3>Khổ lớn 1+1</h3>
-                  <div class="en">Big size 1+1</div>
-                  <div class="k-counts">
-                    <div class="k-count"><span class="c">2</span><span class="p">110.000đ</span></div>
-                    <div class="k-count"><span class="c">3</span><span class="p">160.000đ</span></div>
-                    <div class="k-count"><span class="c">4</span><span class="p">210.000đ</span></div>
-                    <div class="k-count"><span class="c">5</span><span class="p">260.000đ</span></div>
-                  </div>
-                </div>
-              </div>
-              <div class="k-foot">
-                <span class="hintpill">◆ <span class="t-vi">Quét QR trên điện thoại hoặc gặp nhân viên để tạo order</span><span class="t-en">Scan the QR on your phone or see staff to create an order</span></span>
-              </div>
-            </div>
-          </section>
-
 
           <!-- session entry -->
           <section class="screen" data-kscreen="session">
@@ -809,8 +767,8 @@ body[data-lang="en"] .t-en{display:inline}
                 <div style="font-family:var(--font-mono);font-size:5cqw;color:var(--accent);margin-top:.6cqw">≈ 6 phút</div>
               </div>
               <p class="p-sub" style="font-size:2.9cqw;margin-top:3cqw">
-                <span class="t-vi">Giữ màn hình này. Khi tới lượt, mã phiên chụp sẽ hiện ở đây và trên màn hình lớn.</span>
-                <span class="t-en">Keep this screen open. When it is your turn, the session code appears here and on the big screen.</span>
+                <span class="t-vi">Giữ màn hình này. Khi tới lượt, mã phiên chụp sẽ hiện ngay ở đây.</span>
+                <span class="t-en">Keep this screen open. When it is your turn, the session code appears right here.</span>
               </p>
             </div>
             <div class="p-home"></div>
@@ -895,50 +853,6 @@ body[data-lang="en"] .t-en{display:inline}
               </div>
             </div>
             <div class="p-home"></div>
-          </section>
-        </div>
-      </div>
-
-      <!-- ═══ OVERHEAD ═══ -->
-      <div class="surface-wrap grow" data-device="overhead" data-od-id="surface-overhead">
-        <div class="surface-note"><span class="t-vi">Màn hình hàng đợi (treo tường)</span><span class="t-en">Overhead queue screen</span> · 1920 × 1080</div>
-        <div class="device device--overhead">
-          <section class="screen on" data-oscreen="queue">
-            <div class="o-pad">
-              <div class="k-top" style="margin-bottom:1.8cqw">
-                <div><div class="k-eyebrow">Mộc Selfbooth</div>
-                  <div class="k-h1 sm" style="color:var(--accent)">Hàng đợi hôm nay</div></div>
-                <span class="k-logo">PÓZE</span>
-              </div>
-              <div class="o-grid">
-                <div class="o-now">
-                  <div class="lab"><span class="t-vi">Đang phục vụ</span><span class="t-en">Now serving</span></div>
-                  <div class="no" id="oNowNo">#11</div>
-                  <div class="code"><span class="t-vi">Mã phiên</span><span class="t-en">Session</span> · <span id="oNowCode">1177</span></div>
-                </div>
-                <div class="o-list" id="oList"></div>
-              </div>
-              <div class="k-foot" style="margin-top:1.8cqw">
-                <span class="hintpill">◆ <span class="t-vi">Quét mã QR trên vé của bạn để vào hàng đợi</span><span class="t-en">Scan the QR on your ticket to join the queue</span></span>
-              </div>
-            </div>
-          </section>
-          <section class="screen" data-oscreen="turn">
-            <div class="o-pad">
-              <div class="k-top" style="margin-bottom:1.8cqw">
-                <div><div class="k-eyebrow">Mộc Selfbooth</div>
-                  <div class="k-h1 sm" style="color:var(--accent)">Hàng đợi hôm nay</div></div>
-                <span class="k-logo">PÓZE</span>
-              </div>
-              <div class="o-grid">
-                <div class="o-now" style="border-color:var(--ok)">
-                  <div class="lab" style="color:var(--ok)"><span class="t-vi">Đến lượt · mời vào buồng chụp</span><span class="t-en">Now serving · please enter</span></div>
-                  <div class="no" id="oNowNo2">#12</div>
-                  <div class="code"><span class="t-vi">Mã phiên chụp</span><span class="t-en">Session code</span> · <span id="oNowCode2" style="font-size:4.4cqw">4821</span></div>
-                </div>
-                <div class="o-list" id="oList2"></div>
-              </div>
-            </div>
           </section>
         </div>
       </div>
@@ -1028,11 +942,13 @@ body[data-lang="en"] .t-en{display:inline}
 
 <script>
 /* ═══════════════════════════════════════════════════════════════════════
-   STATE — one shared session across all four surfaces.
+   STATE — one shared session across all surfaces.
    ═══════════════════════════════════════════════════════════════════════ */
 const S = {
-  step: 1,
+  step: 0,                                   // 0 = overview / intro, 1–10 = flow steps
   pkg: { size:'small', count:4, price:130000, label:'Khổ nhỏ 1+1 · 4 ảnh', edits:2 },
+  draft: { size:'small', count:4, price:130000, pay:'qr' },     // phone order draft
+  staff: { size:'small', count:4, price:130000, pay:'cash', recv:0 }, // counter POS draft
   pay: { method:null, cash:0, paid:false },
   queue: { no:12, ahead:3 },
   session: '4821',
@@ -1042,12 +958,20 @@ const S = {
   order: { id:'#ORD-4821', type:'2 × 5×15', status:'wait' }
 };
 
+/* package catalogue — shared by the phone picker and the counter POS */
+const SIZES = {
+  small: { vi:'Khổ nhỏ 1+1', counts:[{c:2,p:80000},{c:4,p:130000},{c:6,p:180000},{c:8,p:230000}] },
+  big:   { vi:'Khổ lớn 1+1', counts:[{c:2,p:110000},{c:3,p:160000},{c:4,p:210000},{c:5,p:260000}] }
+};
+const pkgLabel = (size, count) => `${(SIZES[size] || SIZES.small).vi} · ${count} ảnh`;
+const editsFor = count => Math.max(1, Math.ceil(count / 2));
+
 const STEPS = [
-  { vi:'Bảng giá & gói chụp', en:'Pricing & package', dev:['kiosk','phone','staff'], ks:'priceboard', ps:'order-pkg', desc:{vi:'Bảng giá treo ở quầy. Khách tự chọn gói trên điện thoại, hoặc nhân viên tạo order thủ công tại quầy POS.',en:'Prices are displayed at the booth. The guest picks a package on their phone, or staff builds the order in the counter POS.'} },
+  { vi:'Bảng giá & gói chụp', en:'Pricing & package', dev:['phone','staff'], ps:'order-pkg', desc:{vi:'Bảng giá treo ở quầy. Khách tự chọn gói trên điện thoại, hoặc nhân viên tạo order thủ công tại quầy POS.',en:'Prices are displayed at the booth. The guest picks a package on their phone, or staff builds the order in the counter POS.'} },
   { vi:'Thanh toán', en:'Payment', dev:['phone','staff'], ps:'order-pay', desc:{vi:'Khách trả bằng QR/ví điện tử hoặc tiền mặt ngay trên điện thoại — hoặc trả trực tiếp cho nhân viên tại quầy.',en:'The guest pays by QR/e-wallet or cash on their phone — or pays the staff directly at the counter.'} },
   { vi:'Tạo order → link session / QR', en:'Order → session link / QR', dev:['phone','staff'], ps:'order-link', desc:{vi:'Order được tạo: khách nhận link session trên điện thoại. Nếu nhân viên tạo thì quầy hiện mã QR để khách quét vào session.',en:'Once created, the guest gets a session link on their phone. If staff created it, the counter shows a QR for the guest to scan into the session.'} },
-  { vi:'Vào session — số hàng đợi', en:'Enter session — queue number', dev:['phone','overhead'], ks:null, ps:'queue', os:'queue', desc:{vi:'Điện thoại hiện số hàng đợi, màn hình lớn hiện danh sách đang chờ.',en:'The phone shows the queue number; the overhead screen shows the live list.'} },
-  { vi:'Đến lượt — mã phiên chụp', en:'Your turn — session code', dev:['phone','overhead'], ks:null, ps:'turn', os:'turn', desc:{vi:'Khi tới lượt, mã phiên 4 số hiện trên điện thoại và màn hình lớn cùng lúc.',en:'At your turn the 4-digit session code appears on both the phone and the big screen.'} },
+  { vi:'Vào session — số hàng đợi', en:'Enter session — queue number', dev:['phone'], ps:'queue', desc:{vi:'Khách mở link session trên điện thoại và thấy số hàng đợi cùng thời gian chờ dự kiến.',en:'The guest opens the session link on their phone and sees the queue number and estimated wait.'} },
+  { vi:'Đến lượt — mã phiên chụp', en:'Your turn — session code', dev:['phone'], ps:'turn', desc:{vi:'Khi tới lượt, mã phiên 4 số hiện trên điện thoại của khách để mang sang kiosk.',en:'At their turn the 4-digit session code appears on the guest’s phone to carry over to the kiosk.'} },
   { vi:'Nhập mã phiên ở kiosk', en:'Enter session code', dev:['kiosk'], ks:'session', desc:{vi:'Khách nhập mã phiên trên kiosk để mở buồng chụp.',en:'The guest types the session code on the kiosk to unlock the booth.'} },
   { vi:'Chụp liên tiếp (countdown)', en:'Continuous capture (countdown)', dev:['kiosk'], ks:'capture', desc:{vi:'Buồng chụp tự động chụp liên tiếp, có countdown ngắn giữa các tấm (demo 10 giây). Không có màn review từng ảnh và không chọn frame ở kiosk — khách chọn khung khi chỉnh ảnh trên điện thoại.',en:'The booth fires shots back-to-back with a short countdown between them (10-second demo). There is no per-shot review and no frame pick at the kiosk — framing happens later in the phone editor.'} },
   { vi:'Hoàn tất — QR sang link edit', en:'Done — QR to edit', dev:['kiosk'], ks:'done', desc:{vi:'Kiosk hiện mã QR mở link edit trên điện thoại. Số bản edit phụ thuộc gói chụp.',en:'The kiosk shows a QR that opens the phone edit link. Edit count depends on the package.'} },
@@ -1101,6 +1025,7 @@ function buildRail(){
 }
 
 function renderStep(){
+  if (S.step === 0){ renderIntro(); return; }
   const s = STEPS[S.step-1];
   $('#stepIdx').textContent = `STEP ${String(S.step).padStart(2,'0')} / 10`;
   const lang = document.body.dataset.lang;
@@ -1117,12 +1042,27 @@ function renderStep(){
   $$('[data-device]').forEach(w=> w.hidden = !s.dev.includes(w.dataset.device));
   if (s.ks) setKiosk(s.ks);
   if (s.ps) setPhone(s.ps);
-  if (s.os) setOS(s.os);
+}
+
+/* overview shown before the user enters any step — starts on the phone, never the kiosk */
+function renderIntro(){
+  const lang = document.body.dataset.lang;
+  $('#stepIdx').innerHTML = '<span class="t-vi">Tổng quan</span><span class="t-en">Overview</span>';
+  $('#stepTitle').textContent = lang==='en' ? 'Selfbooth service flow' : 'Luồng dịch vụ Selfbooth';
+  $('#stepDesc').textContent = lang==='en'
+    ? 'Pick a step in the rail to walk through each surface. The guest starts by scanning the QR on their phone to pick a package and pay.'
+    : 'Chọn một bước ở cột bên để xem từng bề mặt. Khách bắt đầu bằng cách quét QR trên điện thoại để chọn gói và thanh toán.';
+  $('#btnPrev').disabled = true;
+  $('#btnNext').disabled = false;
+  $$('#rail button').forEach(b=>{ b.setAttribute('aria-current','false'); b.classList.remove('done'); });
+  $$('[data-device]').forEach(w=> w.hidden = w.dataset.device !== 'phone');
+  setPhone('order-pkg');
 }
 
 function go(n){
-  if (n<1 || n>10) return;
+  if (n<0 || n>10) return;
   S.step = n;
+  if (n===0){ renderStep(); return; }
   // arriving at edit / admin without a real capture session → seed the 3 demo shots
   if ((n===9 || n===10) && S.capture.shots.length===0){
     S.capture.shots = [0,1,2].map(i=>({ seed:'demo-'+i }));
@@ -1131,7 +1071,6 @@ function go(n){
   // step 3 always reflects the phone draft (unless staff already created the order)
   if (n===3 && (!S.order.created || S.order.source==='phone')) orderCreate('phone', true);
   if (n===7 && !S.capture.running) startCapture();
-  if (n===4 || n===5) renderQueueList();
   if (n===9) renderPhoneEdit();
   if (n===10) resetAdminOrder();
   renderStep();
@@ -1143,28 +1082,6 @@ function setKiosk(name){
 }
 function setPhone(name){
   $$('[data-pscreen]').forEach(el=> el.classList.toggle('on', el.dataset.pscreen===name));
-}
-function setOS(name){
-  $$('[data-oscreen]').forEach(el=> el.classList.toggle('on', el.dataset.oscreen===name));
-}
-
-/* overhead queue list — rebuilt from the shared queue state */
-function renderQueueList(){
-  const base = S.queue.no;
-  const rows = [
-    { n:base,     who:'Khách',        now:true,  vi:'Đang chụp', en:'Shooting' },
-    { n:base + 1, who:'Khách',        now:false, vi:'Chờ',       en:'Waiting' },
-    { n:base + 2, who:'Khách',        now:false, vi:'Chờ',       en:'Waiting' },
-    { n:base + 3, who:'Khách',        now:false, vi:'Chờ',       en:'Waiting' }
-  ];
-  const html = rows.map(r=>`
-    <div class="o-row${r.now?' now':''}">
-      <span class="n">#${r.n}</span>
-      <span class="who">${r.who}</span>
-      <span class="st"><span class="t-vi">${r.vi}</span><span class="t-en">${r.en}</span></span>
-    </div>`).join('');
-  const a = $('#oList');  if (a) a.innerHTML = html;
-  const b = $('#oList2'); if (b) b.innerHTML = html;
 }
 
 /* ═══ steps 1–3 — ordering: phone picker + staff console ════════════ */
@@ -1386,7 +1303,7 @@ function stopCapture(){
   S.capture.running = false;
   S.capture.shots = []; S.capture.index = 0;
   toast('Đã dừng ca chụp');
-  go(1);
+  go(0);
 }
 function finishCapture(){
   clearInterval(S.capture.timer);
@@ -1488,7 +1405,7 @@ function sendToPrint(){
   $('#pOrderId').textContent = S.order.id;
 }
 
-/* ═══ reset ══════════════════════════════════════════════════════════ */
+/* ═══ reset — back to the pristine overview state ═══════════════════ */
 function resetAll(){
   clearInterval(S.capture.timer);
   S.capture = { shots:[], index:0, total:3, timer:null, running:false, session:10, elapsed:0 };
@@ -1496,8 +1413,11 @@ function resetAll(){
   S.draft = { size:'small', count:4, price:130000, pay:'qr' };
   S.staff = { size:'small', count:4, price:130000, pay:'cash', recv:0 };
   S.pkg   = { size:'small', count:4, price:130000, label:'Khổ nhỏ 1+1 · 4 ảnh', edits:2 };
-  S.order.created = false; S.order.source = null; S.order.status = 'wait';
+  S.pay   = { method:null, cash:0, paid:false };
+  S.queue = { no:12, ahead:3 };
+  S.order = { id:'#ORD-' + S.session, type:'2 × 5×15', status:'wait', created:false, source:null };
   S.code = '';
+  S.kioskScreen = 'session';
   $('#pBeauty').classList.add('on');
   $('#sQR').hidden = true;
   $$('[data-ssize]').forEach(b=> b.classList.toggle('on', b.dataset.ssize==='small'));
@@ -1505,8 +1425,11 @@ function resetAll(){
   orderPay('qr'); staffPay('cash');
   renderOrderCounts(); renderStaffCounts();
   renderCode();
+  renderPhoneEdit();
   syncPricing();
-  go(1);
+  resetAdminOrder();
+  go(0);
+  toast('Đã quay về trạng thái ban đầu');
 }
 
 /* ═══ boot ═══════════════════════════════════════════════════════════ */
@@ -1518,13 +1441,12 @@ function boot(){
   renderOrderCounts();
   renderStaffCounts();
   renderCode();
-  renderQueueList();
   orderPay('qr');
   staffPay('cash');
   syncPricing();
   renderPhoneEdit();
   resetAdminOrder();
-  go(1);
+  go(0);
 }
 boot();
 </script>
