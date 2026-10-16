@@ -6,7 +6,7 @@
 <title>PÓZE Selfbooth · Luồng dịch vụ / Service flow</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Anton&family=Baloo+2:wght@500;600;700;800&family=Bodoni+Moda:opsz,wght@6..96,700;6..96,900&family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Baloo+2:wght@500;600;700;800&family=Bodoni+Moda:opsz,wght@6..96,700;6..96,900&family=Be+Vietnam+Pro:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
 /* ═══════════════════════════════════════════════════════════════════════
    TOKENS — Poze palette (see brand-spec.md). No raw hex outside this block.
@@ -15,6 +15,7 @@
   --bg:#7a1e22;            /* oxblood canvas */
   --bg-deep:#5c1417;       /* recessed / camera letterbox */
   --bg-ink:#3d0f11;
+  --island:#3d0f11;        /* phone cut-out */
   --surface:#f7f1e3;       /* cream cards, inputs, keys */
   --surface-2:#efe6d2;
   --fg:#f6efe1;            /* cream text on oxblood */
@@ -30,6 +31,7 @@
   --danger:#e0402f;
   --info:#5b7fc7;
   --orange:#e07b3a;
+  --flash:#fff;            /* camera flash — brand-neutral */
 
   /* printed-frame artwork palettes (content, lifted from the reference frames) */
   --frame-coastal-bg:#efe7d5; --frame-coastal-accent:#3f6f6a; --frame-coastal-ink:#2b2b2b;
@@ -52,6 +54,85 @@
   --photo:radial-gradient(125% 95% at 30% 18%, oklch(76% 0.05 58) 0%, oklch(54% 0.075 34) 46%, oklch(30% 0.06 24) 100%);
   --photo-soft:radial-gradient(125% 95% at 30% 18%, oklch(90% 0.03 62) 0%, oklch(72% 0.055 40) 55%, oklch(54% 0.05 30) 100%);
 }
+
+/* ═══════════════════════════════════════════════════════════════════════
+   BRAND OVERRIDE — The Era booth (append ?brand=the-era)
+   Beige + light-wood palette, one modern sans (Manrope). Same layout,
+   same components, same flow as the default Poze system.
+   See brand-spec-the-era.md. No raw hex outside this block / :root.
+   ═══════════════════════════════════════════════════════════════════════ */
+html[data-brand="the-era"]{
+  --bg:#f3ebdd;            /* beige canvas */
+  --bg-deep:#eadcc4;       /* recessed beige */
+  --bg-ink:#c3a377;        /* light wood — bezels, sidebars */
+  --island:#241a10;        /* phone cut-out stays dark on the wood bezel */
+  --surface:#fbf7ee;       /* warm near-white cards */
+  --surface-2:#f0e7d6;
+  --fg:#3a2c1d;            /* espresso text on beige */
+  --ink:#2b2014;
+  --muted:#7c6647;
+  --muted-ink:#8a7458;
+  --border:#ddcbb0;
+  --border-ink:#e3d4ba;
+  --accent:#a9742f;        /* deep caramel */
+  --accent-2:#8a5a24;
+  --gold-deep:#8a5a24;
+  --ok:#3f9d6a; --danger:#c5452f; --info:#4f7aa8; --orange:#c07a34;
+  --oncam:#fbf7ee;         /* light text over the dark camera photo */
+
+  --font-display:'Manrope','Be Vietnam Pro',system-ui,sans-serif;
+  --font-round:'Manrope','Be Vietnam Pro',system-ui,sans-serif;
+  --font-serif:'Manrope','Be Vietnam Pro',system-ui,sans-serif;
+  --font-mono:'Manrope','Be Vietnam Pro',system-ui,sans-serif;   /* one family, weight-driven */
+
+  --photo:radial-gradient(125% 95% at 30% 18%, oklch(88% 0.045 78) 0%, oklch(70% 0.06 62) 52%, oklch(45% 0.05 52) 100%);
+  --photo-soft:radial-gradient(125% 95% at 30% 18%, oklch(96% 0.025 82) 0%, oklch(84% 0.045 70) 55%, oklch(68% 0.05 58) 100%);
+}
+/* modern sans, weight-driven hierarchy (replaces the condensed display face) */
+html[data-brand="the-era"] h1,
+html[data-brand="the-era"] h2,
+html[data-brand="the-era"] h3,
+html[data-brand="the-era"] h4,
+html[data-brand="the-era"] .k-h1,
+html[data-brand="the-era"] .k-group h3,
+html[data-brand="the-era"] .k-count .c,
+html[data-brand="the-era"] .p-h,
+html[data-brand="the-era"] .p-big,
+html[data-brand="the-era"] .p-count .c,
+html[data-brand="the-era"] .a-count .c,
+html[data-brand="the-era"] .a-card .val,
+html[data-brand="the-era"] .a-head h3,
+html[data-brand="the-era"] .stage-head h1,
+html[data-brand="the-era"] .rail h2{ font-weight:800 }
+html[data-brand="the-era"] .brand .mark,
+html[data-brand="the-era"] .k-logo,
+html[data-brand="the-era"] .a-side .logo{ font-weight:800; letter-spacing:-.01em }
+/* light-wood sidebar — lift link text to ink so it reads on wood */
+html[data-brand="the-era"] .a-side a{ color:var(--ink) }
+html[data-brand="the-era"] .a-side a:hover{ color:var(--accent) }
+/* camera chrome flips to light text over the dark photo */
+html[data-brand="the-era"] .cam-chip,
+html[data-brand="the-era"] .cam-badge,
+html[data-brand="the-era"] .cam-shutter-lab{ color:var(--oncam) }
+html[data-brand="the-era"] .cam-count .ring .fg{ stroke:var(--accent) }
+html[data-brand="the-era"] .cam-count .num{ color:var(--accent) }
+html[data-brand="the-era"] .cam-prog i{ background:var(--accent) }
+/* wordmark reads in ink on the light-wood sidebar (caramel-on-wood is low contrast) */
+html[data-brand="the-era"] .a-side .logo{ color:var(--ink) }
+/* no Poze condensed/uppercase stack — sentence-case, weight-driven headings */
+html[data-brand="the-era"] .rail h2,
+html[data-brand="the-era"] .k-h1,
+html[data-brand="the-era"] .k-group h3,
+html[data-brand="the-era"] .p-h,
+html[data-brand="the-era"] .a-head h3,
+html[data-brand="the-era"] .stage-head h1,
+html[data-brand="the-era"] .collage .cap small{ text-transform:none; letter-spacing:-.01em }
+/* light-wood nav + active states */
+html[data-brand="the-era"] .rail button:hover{ background:color-mix(in oklch,var(--bg-ink) 42%,transparent) }
+html[data-brand="the-era"] .rail button[aria-current="true"]{ background:var(--bg-ink); border-color:color-mix(in oklch,var(--bg-ink) 58%,var(--ink)) }
+html[data-brand="the-era"] .rail button[aria-current="true"] .lbl{ color:var(--ink) }
+html[data-brand="the-era"] .rail button[aria-current="true"] .n{ background:var(--ink); border-color:var(--ink); color:var(--bg) }
+html[data-brand="the-era"] .a-side a.on{ background:color-mix(in oklch,var(--bg) 26%,transparent); color:var(--ink) }
 
 /* ─── reset & base ─────────────────────────────────────────────────── */
 *,*::before,*::after{box-sizing:border-box}
@@ -284,7 +365,7 @@ body[data-lang="en"] .t-en{display:inline}
 .cam-badge{position:absolute;top:1.4cqw;right:1.4cqw;background:rgba(20,10,10,.6);border-radius:999px;
   padding:.5cqw 1.2cqw;font-family:var(--font-round);font-weight:600;font-size:1.2cqw;display:flex;align-items:center;gap:.6cqw;z-index:3}
 .cam-badge i{width:.9cqw;height:.9cqw;border-radius:50%;background:var(--danger);display:block}
-.cam-flash{position:absolute;inset:0;background:#fff;opacity:0;z-index:5;pointer-events:none;transition:opacity .1s ease}
+.cam-flash{position:absolute;inset:0;background:var(--flash);opacity:0;z-index:5;pointer-events:none;transition:opacity .1s ease}
 .cam-flash.on{opacity:.92;transition:none}
 .cam-dots{display:flex;gap:1cqw;align-items:center}
 .cam-dots i{width:1.5cqw;height:1.5cqw;border-radius:50%;background:rgba(255,255,255,.32);display:block;transition:.2s ease}
@@ -338,7 +419,7 @@ body[data-lang="en"] .t-en{display:inline}
   justify-content:space-between;padding:0 5cqw;font-family:var(--font-round);font-weight:700;
   font-size:3cqw;color:var(--fg);z-index:5}
 .p-island{position:absolute;top:2.1cqw;left:50%;transform:translateX(-50%);width:27cqw;height:6.4cqw;
-  background:var(--bg-ink);border-radius:999px;z-index:6}
+  background:var(--island);border-radius:999px;z-index:6}
 .p-body{position:absolute;top:7.2cqw;left:0;right:0;bottom:6.4cqw;overflow:auto;padding:4cqw 5cqw 5cqw}
 .p-body::-webkit-scrollbar{width:0}
 .p-home{position:absolute;bottom:1.6cqw;left:50%;transform:translateX(-50%);width:34%;height:1.1cqw;
@@ -474,9 +555,9 @@ body[data-lang="en"] .t-en{display:inline}
 <header class="topbar" data-od-id="topbar">
   <div class="topbar-in">
     <div class="brand">
-      <span class="mark">PÓZE</span>
+      <span class="mark" data-brand-word>PÓZE</span>
       <span class="div"></span>
-      <span class="sub">Selfbooth · <span class="t-vi">Luồng dịch vụ đầu–cuối</span><span class="t-en">End-to-end service flow</span></span>
+      <span class="sub" data-brand-sub>Selfbooth · <span class="t-vi">Luồng dịch vụ đầu–cuối</span><span class="t-en">End-to-end service flow</span></span>
     </div>
     <div class="top-actions">
       <button class="reset-btn" onclick="resetAll()" title="Về trạng thái ban đầu / Reset to start">
@@ -525,7 +606,7 @@ body[data-lang="en"] .t-en{display:inline}
                 <div><div class="k-eyebrow">Step 06 · Màn hình buồng chụp</div>
                   <div class="k-h1">Nhập mã phiên chụp</div>
                   <div class="k-sub">Enter session code · mã hiển thị trên điện thoại của bạn</div></div>
-                <span class="k-logo">PÓZE</span>
+                <span class="k-logo" data-brand-word>PÓZE</span>
               </div>
               <div class="k-pay" style="align-items:center">
                 <div>
@@ -613,7 +694,7 @@ body[data-lang="en"] .t-en{display:inline}
                 <div><div class="k-eyebrow">Step 08 · Done</div>
                   <div class="k-h1">Chụp xong!</div>
                   <div class="k-sub">Scan to edit your photos on your phone</div></div>
-                <span class="k-logo">PÓZE</span>
+                <span class="k-logo" data-brand-word>PÓZE</span>
               </div>
               <div class="k-center" style="flex-direction:row;gap:3.4cqw">
                 <div class="qr-box" style="width:24cqw" id="qrEdit"></div>
@@ -643,7 +724,7 @@ body[data-lang="en"] .t-en{display:inline}
         <div class="device device--admin">
           <div class="a-shell">
             <aside class="a-side">
-              <div class="logo">PÓZE</div>
+              <div class="logo" data-brand-word>PÓZE</div>
               <a class="on">＋ <span class="t-vi">Tạo order</span><span class="t-en">New order</span></a>
               <a>▤ <span class="t-vi">Đơn hôm nay</span><span class="t-en">Today</span></a>
               <a>▦ <span class="t-vi">Hàng đợi</span><span class="t-en">Queue</span></a>
@@ -693,7 +774,7 @@ body[data-lang="en"] .t-en{display:inline}
                     <div>
                       <div class="mono" style="font-size:4.4cqw;color:var(--accent);line-height:1" id="sQRqueue">#12</div>
                       <div class="a-kv" style="border-bottom:0"><span><span class="t-vi">Mã đơn</span><span class="t-en">Order</span></span><span class="v" id="sQRorder">#ORD-4821</span></div>
-                      <div class="mono" style="font-size:1.2cqw;color:var(--muted);margin-top:.3cqw" id="sQRlink">poze.vn/s/4821</div>
+                      <div class="mono" style="font-size:1.2cqw;color:var(--muted);margin-top:.3cqw" id="sQRlink" data-brand-link>poze.vn/s/4821</div>
                     </div>
                   </div>
                   <div style="display:flex;gap:1cqw;margin-top:1.6cqw">
@@ -718,7 +799,7 @@ body[data-lang="en"] .t-en{display:inline}
           <section class="screen" data-pscreen="order-pkg">
             <div class="p-body">
               <div class="p-row">
-                <div><div class="p-label">Mộc Selfbooth</div>
+                <div><div class="p-label" data-brand-phone>Mộc Selfbooth</div>
                   <div style="font-family:var(--font-display);font-size:6.6cqw;color:var(--accent);line-height:1.05">Chọn gói chụp</div></div>
                 <div class="p-label" style="text-align:right">Step 01<br>Bảng giá</div>
               </div>
@@ -791,7 +872,7 @@ body[data-lang="en"] .t-en{display:inline}
                 <div class="p-label" style="margin-top:2.6cqw"><span class="t-vi">Gói chụp</span><span class="t-en">Package</span></div>
                 <div style="font-family:var(--font-round);font-weight:700;font-size:3.6cqw;margin-top:1cqw" id="pLinkPkg">Khổ nhỏ 1+1 · 4 ảnh</div>
               </div>
-              <div class="p-link" style="margin-top:3cqw">poze.vn/s/4821<span class="cp" onclick="toast('Đã copy link · Link copied')">Copy</span></div>
+              <div class="p-link" style="margin-top:3cqw"><span data-brand-link>poze.vn/s/4821</span><span class="cp" onclick="toast('Đã copy link · Link copied')">Copy</span></div>
               <div class="p-card" style="margin-top:3cqw;display:flex;align-items:center;gap:3cqw">
                 <div class="qr-box" style="width:26cqw;flex:none" id="pLinkQr"></div>
                 <div><div class="p-label"><span class="t-vi">Số hàng đợi</span><span class="t-en">Queue number</span></div>
@@ -808,7 +889,7 @@ body[data-lang="en"] .t-en{display:inline}
           <!-- queue -->
           <section class="screen on" data-pscreen="queue">
             <div class="p-body">
-              <div class="p-label">Mộc Selfbooth</div>
+              <div class="p-label" data-brand-phone>Mộc Selfbooth</div>
               <div class="p-h">Số hàng đợi</div>
               <div class="p-sub">Your queue number</div>
               <div class="p-card" style="text-align:center">
@@ -855,7 +936,7 @@ body[data-lang="en"] .t-en{display:inline}
           <section class="screen" data-pscreen="edit">
             <div class="p-body" style="padding-top:2cqw">
               <div class="p-row">
-                <div><div class="p-label">Mộc Selfbooth</div>
+                <div><div class="p-label" data-brand-phone>Mộc Selfbooth</div>
                   <div style="font-family:var(--font-display);font-size:6.6cqw;color:var(--accent);line-height:1.05">Chỉnh sửa ảnh</div></div>
                 <div class="p-label" style="text-align:right"><span class="t-vi">Bản edit</span><span class="t-en">Edits</span><br><span class="mono" style="font-size:4.4cqw;color:var(--accent)" id="pEditCount">1 / 2</span></div>
               </div>
@@ -918,7 +999,7 @@ body[data-lang="en"] .t-en{display:inline}
         <div class="device device--admin">
           <div class="a-shell">
             <aside class="a-side">
-              <div class="logo">PÓZE</div>
+              <div class="logo" data-brand-word>PÓZE</div>
               <a class="on">▤ <span class="t-vi">Đơn in</span><span class="t-en">Print queue</span></a>
               <a>▦ <span class="t-vi">Hàng đợi</span><span class="t-en">Queue</span></a>
               <a>◲ <span class="t-vi">Máy &amp; giấy</span><span class="t-en">Printer &amp; paper</span></a>
@@ -989,7 +1070,7 @@ body[data-lang="en"] .t-en{display:inline}
 </div>
 
 <footer class="pagefoot" data-od-id="footer">
-  <span>© 2026 PÓZE Selfbooth · Mộc</span>
+  <span data-brand-foot>© 2026 PÓZE Selfbooth · Mộc</span>
   <span class="mono">Prototype · <span class="t-vi">demo 10s mỗi ca chụp liên tiếp</span><span class="t-en">10s demo per continuous session</span> · VI/EN</span>
 </footer>
 
@@ -1012,6 +1093,39 @@ const S = {
   edit: { frame:0, filter:0, zoom:1, beauty:true, count:1 },
   order: { id:'#ORD-4821', type:'2 × 5×15', status:'wait' }
 };
+
+/* ═══════════════════════════════════════════════════════════════════════
+   BRAND SWITCH — append ?brand=the-era to load the The Era booth skin.
+   Default (no param) stays the Poze system, untouched.
+   ═══════════════════════════════════════════════════════════════════════ */
+const BRANDS = {
+  default: {
+    word:'PÓZE', link:'poze.vn', phone:'Mộc Selfbooth', name:'Selfbooth',
+    subVi:'Selfbooth · Luồng dịch vụ đầu–cuối', subEn:'Selfbooth · End-to-end service flow',
+    foot:'© 2026 PÓZE Selfbooth · Mộc',
+    title:'PÓZE Selfbooth · Luồng dịch vụ / Service flow'
+  },
+  'the-era': {
+    word:'THE ERA', link:'theera.vn', phone:'The Era booth', name:'The Era booth',
+    subVi:'The Era booth · Luồng dịch vụ đầu–cuối', subEn:'The Era booth · End-to-end service flow',
+    foot:'© 2026 The Era booth · Photobooth',
+    title:'The Era booth · Luồng dịch vụ / Service flow'
+  }
+};
+const BRAND = (()=>{
+  const key = new URLSearchParams(location.search).get('brand') || 'default';
+  return { key, ...(BRANDS[key] || BRANDS.default) };
+})();
+function applyBrand(){
+  if (BRAND.key !== 'default') document.documentElement.dataset.brand = BRAND.key;
+  $$('[data-brand-word]').forEach(el=> el.textContent = BRAND.word);
+  $$('[data-brand-phone]').forEach(el=> el.textContent = BRAND.phone);
+  $$('[data-brand-sub]').forEach(el=> el.innerHTML =
+    `<span class="t-vi">${BRAND.subVi}</span><span class="t-en">${BRAND.subEn}</span>`);
+  $$('[data-brand-foot]').forEach(el=> el.textContent = BRAND.foot);
+  $$('[data-brand-link]').forEach(el=> el.textContent = BRAND.link + '/s/' + S.session);
+  document.title = BRAND.title;
+}
 
 /* package catalogue — shared by the phone picker and the counter POS */
 const SIZES = {
@@ -1103,7 +1217,7 @@ function renderStep(){
 function renderIntro(){
   const lang = document.body.dataset.lang;
   $('#stepIdx').innerHTML = '<span class="t-vi">Tổng quan</span><span class="t-en">Overview</span>';
-  $('#stepTitle').textContent = lang==='en' ? 'Selfbooth service flow' : 'Luồng dịch vụ Selfbooth';
+  $('#stepTitle').textContent = lang==='en' ? `${BRAND.name} service flow` : `Luồng dịch vụ ${BRAND.name}`;
   $('#stepDesc').textContent = lang==='en'
     ? 'Pick a step in the rail to walk through each surface. The guest starts by scanning the QR on their phone to pick a package and pay.'
     : 'Chọn một bước ở cột bên để xem từng bề mặt. Khách bắt đầu bằng cách quét QR trên điện thoại để chọn gói và thanh toán.';
@@ -1216,7 +1330,7 @@ function orderCreate(source, silent){
     $('#sQRimg').innerHTML = qrSVG('poze-session-' + S.session, 25);
     setTxt('sQRqueue', '#' + S.queue.no);
     setTxt('sQRorder', S.order.id);
-    setTxt('sQRlink', 'poze.vn/s/' + S.session);
+    setTxt('sQRlink', BRAND.link + '/s/' + S.session);
     $('#sQR').hidden = false;
     if (!silent) toast('Đã tạo order · cấp QR cho khách');
   } else {
@@ -1508,6 +1622,7 @@ function resetAll(){
 
 /* ═══ boot ═══════════════════════════════════════════════════════════ */
 function boot(){
+  applyBrand();
   buildRail();
   $('#pLinkQr').innerHTML = qrSVG('poze-session-' + S.session, 25);
   $('#qrEdit').innerHTML  = qrSVG('poze-edit-' + S.session, 25);
